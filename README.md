@@ -246,3 +246,7 @@ The test workflow using `toAvroDefault` works like this:
 3. Use both the case classes you've generated and the SpecificRecord as arguments to `toAvroDefault`
 4. The output of `toAvroDefault` for a case class will be a SpecificRecord where all fields in your case class are copied into the record, and all fields not specified in the case class will have the values given in your "default" record. Repeated nested records will take their default values from the first nested record in the repeated list.
 
+
+## Code of Conduct
+
+This project adheres to the Spotify FOSS Code of Conduct. By participating, you are expected to honor this code.
