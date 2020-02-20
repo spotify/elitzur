@@ -1,0 +1,11 @@
+{
+  "name": "TestNestedRecord",
+  "namespace": "com.spotify.skeleton.schema",
+  "type": "record",
+  "fields": [
+    {
+      "name": "inner",
+      "type": "com.spotify.skeleton.schema.InnerNestedType"
+    }
+  ]
+}

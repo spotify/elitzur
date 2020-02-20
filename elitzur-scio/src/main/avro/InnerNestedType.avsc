@@ -1,0 +1,22 @@
+{
+  "name": "InnerNestedType",
+  "namespace": "com.spotify.skeleton.schema",
+  "type": "record",
+  "fields": [
+    {
+      "name": "userId",
+      "type": "string",
+      "doc": "The user id"
+    },
+    {
+      "name": "countryCode",
+      "type": "string",
+      "doc": "{validationType: countryCode}"
+    },
+    {
+      "name": "playCount",
+      "type": "long",
+      "doc": "The track play count for the given user"
+    }
+  ]
+}

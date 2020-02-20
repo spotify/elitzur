@@ -1,0 +1,37 @@
+{
+  "name": "NullableNestedRecord",
+  "namespace": "com.spotify.skeleton.schema",
+  "type": "record",
+  "fields": [
+    {
+      "name": "inner",
+      "type": [
+                "null",
+                {
+                  "type": "record",
+                  "name": "NullableInner",
+                  "namespace": "com.spotify.skeleton.schema",
+                  "doc": "Inline defined nullable inner record",
+                  "fields": [
+              	    {
+              	      "name": "userId",
+              	      "type": "string",
+              	      "doc": "The user id"
+              	    },
+              	    {
+              	      "name": "countryCode",
+              	      "type": "string",
+              	      "doc": "{validationType: countryCode}"
+              	    },
+              	    {
+              	      "name": "playCount",
+              	      "type": "long",
+              	      "doc": "The track play count for the given user"
+              	    }
+                  ]
+                }
+              ],
+      "default": "null"
+    }
+  ]
+}

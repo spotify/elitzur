@@ -1,0 +1,103 @@
+{
+  "name": "TestAvroTypes",
+  "namespace": "com.spotify.skeleton.schema",
+  "type": "record",
+  "fields": [
+    {
+      "name": "userAge",
+      "type": "long",
+      "doc": "{validationType: age}"
+    },
+    {
+      "name": "userBoolean",
+      "type": "boolean",
+      "doc": "{validationType: nonNullBoolean}"
+    },
+    {
+      "name": "userFloat",
+      "type": "float",
+      "doc": "floating away on the clouds of google"
+    },
+    {
+      "name": "userDouble",
+      "type": "double",
+      "doc": "{validationType: nonNegativeDouble}"
+    },
+    {
+      "name": "userLong",
+      "type": "long",
+      "doc": "{validationType: nonNegativeLong}"
+    },
+    {
+      "name": "latitude",
+      "type": "bytes",
+      "doc": ""
+    },
+    {
+      "name": "longitude",
+      "type": "bytes",
+      "doc": ""
+    },
+    {
+      "name": "userOptionalLong",
+      "type": ["null", "long"],
+      "default": null,
+      "doc": "{validationType: nonNegativeLong}"
+    },
+    {
+      "name": "innerOpt",
+      "type": ["null", "com.spotify.skeleton.schema.InnerNestedType"],
+      "default": null
+    },
+    {
+      "name": "inner",
+      "type": "com.spotify.skeleton.schema.InnerNestedType"
+    },
+    {
+      "name": "userTypeEnum",
+      "type" : {
+        "name": "UserType",
+        "type": "enum",
+        "symbols": [
+          "USER",
+          "BOT"
+        ]
+      }
+    },
+    {
+      "name": "userArrayString",
+      "type" : {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "userMapStringLong",
+      "type" : {
+        "type": "map",
+        "values": "long"
+      }
+    },
+    {
+      "name": "userFixed",
+      "type": {
+        "name": "FIXED_ELEMENT",
+        "type": "fixed",
+        "size": 16
+      }
+    },
+    {
+      "name": "enum_test",
+      "type": {
+        "type": "enum",
+        "name": "EnumTest",
+        "symbols": [
+          "EndSong",
+          "EndVideo",
+          "StreamProgress"
+        ]
+      },
+      "doc": "Message name, one of {EndSong, EndVideo, StreamProgress}"
+    }
+  ]
+}

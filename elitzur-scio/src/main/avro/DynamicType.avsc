@@ -1,0 +1,12 @@
+{
+  "name": "DynamicType",
+  "namespace": "com.spotify.skeleton.schema",
+  "type": "record",
+  "fields": [
+    {
+      "name": "stringField",
+      "type": "string",
+      "doc": "A string"
+    }
+  ]
+}

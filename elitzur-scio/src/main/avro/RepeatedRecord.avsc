@@ -1,0 +1,40 @@
+{
+  "name": "RepeatedRecord",
+  "namespace": "com.spotify.skeleton.schema",
+  "type": "record",
+  "fields": [
+    {
+      "name": "repeated_record",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "RepeatedInnerRecord",
+          "doc": "repeated record field",
+          "fields": [
+            {
+              "name": "string_field",
+              "type": "string",
+              "doc": "inner string field"
+            },
+            {
+              "name": "long_field",
+              "type": "long",
+              "doc": "inner long field"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "repeated_field",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "doc": "repeated string field"
+        }
+      }
+    }
+  ]
+}

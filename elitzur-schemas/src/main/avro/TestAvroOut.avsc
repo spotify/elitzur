@@ -1,0 +1,26 @@
+{
+  "name": "TestAvroOut",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name": "userAge",
+      "type": "long",
+      "doc": "{validationType: age}"
+    },
+    {
+      "name": "userFloat",
+      "type": "float",
+      "doc": "floating away on the clouds of google"
+    },
+    {
+      "name": "userLong",
+      "type": "long",
+      "doc": "{validationType: nonNegativeLong}"
+    },
+    {
+      "name": "inner",
+      "type": "com.spotify.elitzur.schemas.InnerNestedOut"
+    }
+  ]
+}

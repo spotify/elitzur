@@ -1,0 +1,11 @@
+{
+    "name": "EnumType",
+    "namespace": "com.spotify.skeleton.schema",
+    "type": "record",
+    "fields": [
+        {
+            "name": "enum_test",
+            "type": "EnumTest"
+        }
+    ]
+}

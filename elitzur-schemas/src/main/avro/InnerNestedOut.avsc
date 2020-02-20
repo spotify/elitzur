@@ -1,0 +1,12 @@
+{
+  "name": "InnerNestedOut",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name": "countryCode",
+      "type": "string",
+      "doc": "{validationType: countryCode}"
+    }
+  ]
+}
