@@ -7,7 +7,7 @@ This library allows you to:
 * use custom Scala types in your Scio data pipeline
 * perform validation on these types
 * [filter or transform invalid data](#custom-validation-behaviour)
-* [alert on validity](#alerting-on-percentage-of-invalid-fields)
+* use Beam counters to check validity
 * convert Avro records into custom-typed case classes
 
 This README will show you how to incorporate this library into your Scio data pipeline.
