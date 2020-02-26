@@ -21,6 +21,7 @@ import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
 val scioVersion = "0.8.1"
+val beamVersion = "2.18.0" // must stay in sync with scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.0"
@@ -177,8 +178,12 @@ lazy val elitzurExamples: Project = Project(
   "elitzur-examples",
   file("elitzur-examples")
 ).settings(
+  // workaround for running examples with Dataflow
+  // see related issue https://github.com/spotify/scio/issues/2280
+  run / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
   libraryDependencies ++= Seq(
     "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion,
+    "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion
   ),
   commonSettings ++ releaseSettings ++ scioSettings,
   name := "elitzur-examples"

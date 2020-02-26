@@ -19,10 +19,9 @@ package com.spotify.elitzur.examples
 
 import com.spotify.scio._
 import com.spotify.scio.avro._
-import com.spotify.elitzur.schemas.{InnerNestedType, TestAvroOut, TestAvroTypes}
+import com.spotify.elitzur.schemas.{InnerNestedType, TestAvroTypes}
 import com.spotify.elitzur.converters._
 import com.spotify.elitzur.scio._
-import com.spotify.elitzur.scio.ElitzurMetrics._
 import com.spotify.elitzur.validators._
 import org.slf4j.LoggerFactory
 import com.spotify.elitzur.examples.Companions._
@@ -32,7 +31,8 @@ import org.apache.beam.sdk.metrics.MetricName
 // Example: Reading in Avro records within a Scio job and validating
 
 // Usage:
-// sbt "elitzur-examples/runMain com.spotify.elitzur.examples.Scio --runner=DirectRunner"
+// sbt "elitzur-examples/runMain com.spotify.elitzur.examples.ScioAvro --runner=DirectRunner"
+// Dataflow requires additional params, see https://beam.apache.org/documentation/runners/dataflow/
 
 object ScioAvro {
 
@@ -95,7 +95,7 @@ object ScioAvro {
     //.saveAsAvroFile(outputPath)
 
     val result = sc
-      .close()
+      .run()
       .waitUntilDone()
 
     val elitzurCounters = ElitzurMetrics.getElitzurCounters(result)
