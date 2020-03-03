@@ -39,62 +39,62 @@ jobs:
   avro_212:
     executor: scala_212
     environment:
-      TEST_PROJECT=elitzurAvro
+      TEST_PROJECT=elitzur-avro
     steps:
       - build
   core_212:
     executor: scala_212
     environment:
-      TEST_PROJECT=elitzurCore
+      TEST_PROJECT=elitzur-core
     steps:
       - build
   examples_212:
     executor: scala_212
     environment:
-      TEST_PROJECT=elitzurExamples
+      TEST_PROJECT=elitzur-examples
     steps:
       - build
   schemas_212:
     executor: scala_212
     environment:
-      TEST_PROJECT=elitzurSchemas
+      TEST_PROJECT=elitzur-schemas
     steps:
       - build
   scio_212:
     executor: scala_212
     environment:
-      TEST_PROJECT=elitzurScio
+      TEST_PROJECT=elitzur-scio
     steps:
       - build
       
   avro_211:
     executor: scala_211
     environment:
-      TEST_PROJECT=elitzurAvro
+      TEST_PROJECT=elitzur-avro
     steps:
       - build
   core_211:
     executor: scala_211
     environment:
-      TEST_PROJECT=elitzurCore
+      TEST_PROJECT=elitzur-core
     steps:
       - build
   examples_211:
     executor: scala_211
     environment:
-      TEST_PROJECT=elitzurExamples
+      TEST_PROJECT=elitzur-examples
     steps:
       - build
   schemas_211:
     executor: scala_211
     environment:
-      TEST_PROJECT=elitzurSchemas
+      TEST_PROJECT=elitzur-schemas
     steps:
       - build
   scio_211:
     executor: scala_211
     environment:
-      TEST_PROJECT=elitzurScio
+      TEST_PROJECT=elitzur-scio
     steps:
       - build
 
