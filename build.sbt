@@ -18,7 +18,6 @@ import sbt.{Project, addCompilerPlugin, _}
 import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
-
 // Variables:
 val scioVersion = "0.8.1"
 val beamVersion = "2.18.0" // must stay in sync with scio
@@ -49,7 +48,8 @@ val disableWarts = Set(
   Wart.Any
 )
 
-lazy val commonSettings = Defaults.coreDefaultSettings ++ Seq(
+lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSettings ++
+  releaseSettings ++ Seq(
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
   scalaVersion          := "2.12.10",
@@ -57,7 +57,8 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     val dirtyGit = if (gitUncommittedChanges.value) ".DIRTY" else ""
     val gitHash = gitHeadCommit.value.getOrElse("NOT_GIT").take(7)
     val snapshotSuffix = s"$gitHash$dirtyGit-SNAPSHOT"
-    s"0.5.1-$snapshotSuffix"
+    //s"0.5.1-$snapshotSuffix"
+    "0.6.0"
   },
   scalacOptions         ++= Seq("-target:jvm-1.8",
     "-deprecation",
@@ -124,12 +125,25 @@ lazy val noPublishSettings = Seq(
 )
 
 lazy val releaseSettings = Seq(
-  publishTo in ThisBuild := { // TODO
-  None
-  },
-  publishArtifact := true,
-  publishMavenStyle := true,
-  publishArtifact in Test := false
+  releaseCrossBuild             := true,
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  publishMavenStyle             := true,
+  publishArtifact in Test       := false,
+  publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
+  sonatypeProfileName           := "com.spotify",
+
+  licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  homepage := Some(url("https://github.com/spotify/elitzur")),
+  scmInfo := Some(ScmInfo(
+    url("https://github.com/spotify/elitzur.git"),
+    "scm:git:git@github.com:spotify/elitzur.git")),
+  developers := List(
+    // current maintainers
+    Developer(id="anne-decusatis", name="Anne DeCusatis", email="anned@spotify.com", url=url("https://twitter.com/precisememory")),
+    Developer(id="catherinejelder", name="Catherine Elder", email="siege@spotify.com", url=url("https://twitter.com/siegeelder")),
+    Developer(id="idreeskhan", name="Idrees Khan", email="me@idreeskhan.com", url=url("https://twitter.com/idreesxkhan")),
+    // TODO add the rest of the team
+  )
 )
 
 lazy val root: Project = Project(
