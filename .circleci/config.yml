@@ -1,42 +1,122 @@
-# Scala CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/sample-config/ for more details
-#
-version: 2
-jobs:
-  build:
+version: &version 2.1
+
+
+####################
+# Templates
+####################
+
+executors:
+  scala_212:
     docker:
-      # specify the version you desire here
       - image: circleci/openjdk:8-jdk
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
     environment:
-      # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx3200m
-      TERM: dumb
+      SCALA_VERSION: 2.12.10
+  scala_211:
+    docker:
+      - image: circleci/openjdk:8-jdk
+    environment:
+      SCALA_VERSION: 2.11.12
 
+commands:
+  build:
+    parameters:
+      build-steps:
+        description: "build steps"
+        type: steps
+        default: []
     steps:
       - checkout
+      - run:
+          command: |
+            sbt clean "project $TEST_PROJECT" scalastyle test:scalastyle test
 
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "build.sbt" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
 
-      - run: cat /dev/null | sbt test:compile
+####################
+# Jobs
+####################
 
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: v1-dependencies--{{ checksum "build.sbt" }}
+jobs:
+  avro_212:
+    executor: scala_212
+    environment:
+      TEST_PROJECT=elitzur-avro
+    steps:
+      - build
+  core_212:
+    executor: scala_212
+    environment:
+      TEST_PROJECT=elitzur-core
+    steps:
+      - build
+  examples_212:
+    executor: scala_212
+    environment:
+      TEST_PROJECT=elitzur-examples
+    steps:
+      - build
+  schemas_212:
+    executor: scala_212
+    environment:
+      TEST_PROJECT=elitzur-schemas
+    steps:
+      - build
+  scio_212:
+    executor: scala_212
+    environment:
+      TEST_PROJECT=elitzur-scio
+    steps:
+      - build
+      
+  avro_211:
+    executor: scala_211
+    environment:
+      TEST_PROJECT=elitzur-avro
+    steps:
+      - build
+  core_211:
+    executor: scala_211
+    environment:
+      TEST_PROJECT=elitzur-core
+    steps:
+      - build
+  examples_211:
+    executor: scala_211
+    environment:
+      TEST_PROJECT=elitzur-examples
+    steps:
+      - build
+  schemas_211:
+    executor: scala_211
+    environment:
+      TEST_PROJECT=elitzur-schemas
+    steps:
+      - build
+  scio_211:
+    executor: scala_211
+    environment:
+      TEST_PROJECT=elitzur-scio
+    steps:
+      - build
 
-      # run tests
-      - run: cat /dev/null | sbt test:test
+
+####################
+# Workflows
+####################
+
+workflows:
+  version: *version
+
+  # Per commit build
+  build:
+    jobs:
+      - avro_212
+      - core_212
+      - examples_212
+      - schemas_212
+      - scio_212
+
+      - avro_211
+      - core_211
+      - examples_211
+      - schemas_211
+      - scio_211
