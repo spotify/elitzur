@@ -53,13 +53,6 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
   scalaVersion          := "2.12.10",
-  version               := {
-    val dirtyGit = if (gitUncommittedChanges.value) ".DIRTY" else ""
-    val gitHash = gitHeadCommit.value.getOrElse("NOT_GIT").take(7)
-    val snapshotSuffix = s"$gitHash$dirtyGit-SNAPSHOT"
-    //s"0.5.1-$snapshotSuffix"
-    "0.6.0"
-  },
   scalacOptions         ++= Seq("-target:jvm-1.8",
     "-deprecation",
     "-feature",
@@ -149,7 +142,7 @@ lazy val releaseSettings = Seq(
 lazy val root: Project = Project(
   "elitzur-validation",
   file(".")
-).settings(commonSettings).aggregate(
+).settings(commonSettings ++ noPublishSettings).aggregate(
   elitzurCore, elitzurAvro, benchmarking, elitzurScio,
   elitzurExamples, elitzurSchemas
 )
