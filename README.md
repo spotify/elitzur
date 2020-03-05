@@ -57,7 +57,12 @@ is a thought experiment that verifies a bomb is functional without having to det
     ```
 
 4. Call `.validate()` on your SCollection.  This will validate all of the ValidationTypes in
-   your data and complete the actions specified by your configuration.
+   your data and complete the actions specified by your configuration. You'll need these imports to call .validate() successfully:
+   
+   ```scala
+   import com.spotify.elitzur.validators._
+   import com.spotify.elitzur.scio._
+   ```
 
 
 #### Avro
@@ -109,7 +114,7 @@ is a thought experiment that verifies a bomb is functional without having to det
 
    Note that if you have a field that is nullable in your Avro schema (i.e. if your field is defined in Avro as a union with null), you'll want to wrap that type in an `Option` in your case class.
 
-   2. In order convert to/from Avro you must import our converters. You'll also need the same validators import as BigQuery.
+   2. In order convert to/from Avro you must import our converters. You'll also need to import the validators.
 
    ```scala
    import com.spotify.elitzur.converters.avro._
