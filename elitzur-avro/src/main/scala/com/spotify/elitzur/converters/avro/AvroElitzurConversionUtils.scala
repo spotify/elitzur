@@ -58,6 +58,16 @@ object AvroElitzurConversionUtils {
         schema.getTypes.asScala.map(_.getType).contains(Schema.Type.RECORD))
 
 
+  private[elitzur] def getNestedRecordSchema(schema: Schema): Schema =
+    schema match {
+      case x if Schema.Type.RECORD.equals(x.getType) => x
+      case x if isAvroRecordType(x) =>
+        x.getTypes.asScala.filterNot(s => Schema.Type.NULL.equals(s.getType)).headOption
+          .getOrElse(x)
+      case _ => throw new RuntimeException("Not a record schema. This shouldn't happen.")
+    }
+
+
   private[elitzur] def isAvroArrayType(schema: Schema): Boolean =
     Schema.Type.ARRAY.equals(schema.getType) ||
       (Schema.Type.UNION.equals(schema.getType) && schema.getTypes.contains(Schema.Type.ARRAY))

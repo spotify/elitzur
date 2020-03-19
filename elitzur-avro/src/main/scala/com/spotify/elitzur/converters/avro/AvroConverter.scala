@@ -310,13 +310,14 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
   override def toAvro(v: T, schema: Schema): Any = {
     val ps = caseClass.parameters
     var i = 0
-    val builder = new GenericRecordBuilder(schema)
+    val cleanSchema = AvroElitzurConversionUtils.getNestedRecordSchema(schema)
+    val builder = new GenericRecordBuilder(cleanSchema)
 
     while (i < ps.length) {
       val p = ps(i)
       val deref = p.dereference(v)
 
-      val fieldName = if (schema.getField(p.label) == null) {
+      val fieldName = if (cleanSchema.getField(p.label) == null) {
         SharedUtils.camelToSnake(p.label)
       } else {
         p.label
@@ -324,7 +325,7 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
 
       builder.set(
         fieldName,
-        p.typeclass.toAvro(deref, schema.getField(fieldName).schema()))
+        p.typeclass.toAvro(deref, cleanSchema.getField(fieldName).schema()))
       i += 1
     }
     builder.build()
