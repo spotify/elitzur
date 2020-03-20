@@ -164,7 +164,7 @@ lazy val elitzurAvro: Project = Project(
   libraryDependencies ++= Seq(
     "com.spotify" %% "scio-avro" % scioVersion
   )
-).dependsOn(elitzurCore)
+).dependsOn(elitzurCore, elitzurSchemas % Test)
 
 lazy val elitzurScio: Project = Project(
   "elitzur-scio",
