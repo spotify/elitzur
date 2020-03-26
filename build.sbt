@@ -22,7 +22,7 @@ import com.typesafe.sbt.SbtGit.GitKeys._
 val scioVersion = "0.8.3"
 val beamVersion = "2.19.0" // must stay in sync with scio
 val avroVersion = "1.8.2"
-val scalacheckShapelessVersion = "1.2.3"
+val scalacheckShapelessVersion = "1.2.5"
 val scalatestVersion = "3.1.1"
 val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.5"
