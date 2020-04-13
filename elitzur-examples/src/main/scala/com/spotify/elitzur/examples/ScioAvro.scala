@@ -29,7 +29,6 @@ import org.apache.beam.sdk.metrics.MetricName
 
 import scala.language.higherKinds
 
-
 // Example: Reading in Avro records within a Scio job and validating
 
 // Usage:

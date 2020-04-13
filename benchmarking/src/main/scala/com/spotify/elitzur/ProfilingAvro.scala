@@ -28,7 +28,6 @@ import org.scalacheck._
 
 import scala.language.higherKinds
 
-
 object ProfilingAvro {
   case class TestAvro(
                        userAge: AgeExample,

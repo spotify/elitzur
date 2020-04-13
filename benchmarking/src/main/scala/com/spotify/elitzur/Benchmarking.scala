@@ -24,7 +24,6 @@ import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUn
 
 import scala.language.higherKinds
 
-
 object CaseClassesToValidate {
   case class ThreeFields(
                           age: AgeExample,

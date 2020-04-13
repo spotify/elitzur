@@ -7,6 +7,7 @@ import java.nio.ByteBuffer
 import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificData
 import org.apache.avro.message.{BinaryMessageEncoder, BinaryMessageDecoder}
+import com.spotify.elitzur.converters.avro.AvroConverter
 
 import enumeratum.EnumEntry.Snakecase
 import enumeratum._
