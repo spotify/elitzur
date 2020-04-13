@@ -1,0 +1,20 @@
+{
+  "name": "TestAvroEnum",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name": "testEnum",
+      "type": {
+        "type": "enum",
+        "name": "TestAvroEnumValue",
+        "symbols": ["snake_case_aaa", "snake_case_bbb", "snake_case_ccc"]
+      }
+    },
+    {
+      "name": "optTestEnum",
+      "type": ["null", "com.spotify.elitzur.schemas.TestAvroEnumValue"],
+      "default": null
+    }
+  ]
+}

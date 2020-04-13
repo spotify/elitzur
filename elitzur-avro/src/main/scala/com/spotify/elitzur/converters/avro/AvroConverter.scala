@@ -257,7 +257,7 @@ private[elitzur] class AvroEnumConverter[T <: enumeratum.EnumEntry: Enum] extend
   override def fromAvro(v: Any, schema: Schema, doc: Option[String]): T =
     implicitly[Enum[T]].withName(v.toString)
 
-  override def toAvro(v: T, schema: Schema): Any = new GenericData.EnumSymbol(schema, v.toString)
+  override def toAvro(v: T, schema: Schema): Any = new GenericData.EnumSymbol(schema, v.entryName)
 
   override def toAvroDefault(v: T, defaultGenericContainer: GenericContainer): Any =
     v.asInstanceOf[Any]
