@@ -3,6 +3,12 @@ package com.spotify.elitzur
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.ByteBuffer
+import org.apache.avro.generic.GenericData
+import org.apache.avro.specific.SpecificData
+import org.apache.avro.message.{BinaryMessageEncoder, BinaryMessageDecoder}
+import com.spotify.elitzur.converters.avro.AvroConverter
+
 import enumeratum.EnumEntry.Snakecase
 import enumeratum._
 import org.apache.avro.Schema
@@ -27,6 +33,21 @@ object AvroClassConverterTest {
 }
 
 class AvroConverterTest extends AnyFlatSpec with Matchers {
+
+  it should "round-trip via a generic record" in {
+    val schema: Schema = TestAvroEnum.getClassSchema
+    val converter: AvroConverter[TestEnum] = implicitly
+    val decoder = new BinaryMessageDecoder[TestAvroEnum](new SpecificData(), schema)
+
+    val a: TestEnum = TestEnum(EnumValue.SnakeCaseBbb, Some(EnumValue.SnakeCaseCcc))
+    val rec: GenericData.Record = converter.toAvro(a, schema).asInstanceOf[GenericData.Record]
+    val encoder = new BinaryMessageEncoder[GenericData.Record](new GenericData(), schema)
+    val bytes: ByteBuffer =  encoder.encode(rec)
+    val converted: TestAvroEnum = decoder.decode(bytes)
+
+    val b: TestEnum = converter.fromAvro(converted, schema)
+    assert(a == b)
+  }
 
   it should "round-trip enumeratum enums" in {
     import AvroClassConverterTest._
