@@ -3,6 +3,10 @@ package com.spotify.elitzur
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import enumeratum.EnumEntry.Snakecase
+import enumeratum._
+import org.apache.avro.Schema
+
 object AvroClassConverterTest {
   case class TestTypes(userAge: Long,
                        userFloat: Float,
@@ -11,9 +15,35 @@ object AvroClassConverterTest {
                        inner: Inner)
 
   case class Inner(userId: String, countryCode: String, playCount: Long)
+
+  sealed trait EnumValue extends EnumEntry with Snakecase
+  object EnumValue extends Enum[EnumValue] {
+    val values = findValues
+    case object SnakeCaseAaa extends EnumValue
+    case object SnakeCaseBbb extends EnumValue
+    case object SnakeCaseCcc extends EnumValue
+  }
+  case class TestEnum(testEnum: EnumValue, optTestEnum: Option[EnumValue])
 }
 
 class AvroConverterTest extends AnyFlatSpec with Matchers {
+
+  it should "round-trip enumeratum enums" in {
+    import AvroClassConverterTest._
+    import com.spotify.elitzur.converters.avro._
+    import com.spotify.elitzur.schemas.TestAvroEnum
+
+    val converter: AvroConverter[TestEnum] = implicitly
+    val schema: Schema = TestAvroEnum.getClassSchema
+
+    val a: TestEnum = TestEnum(EnumValue.SnakeCaseBbb, Some(EnumValue.SnakeCaseCcc))
+    val b: TestEnum = converter.fromAvro(converter.toAvro(a, schema), schema)
+    assert(a == b)
+
+    val c: TestEnum = TestEnum(EnumValue.SnakeCaseAaa, None)
+    val d: TestEnum = converter.fromAvro(converter.toAvro(c, schema), schema)
+    assert(c == d)
+  }
 
   it should "work on nested optional records w/toAvro" in {
     import AvroClassConverterTest._
