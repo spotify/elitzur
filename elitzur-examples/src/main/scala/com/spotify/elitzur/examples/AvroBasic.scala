@@ -23,6 +23,8 @@ import com.spotify.elitzur.schemas.{InnerNestedType, TestAvroOut, TestAvroTypes}
 import com.spotify.elitzur.validators._
 import com.spotify.elitzur.converters.avro._
 
+import scala.language.higherKinds
+
 // Example:  Common use case of Elitzur is to have a schematized dataset, e.g. Avro, Protobuf,
 // BigQuery, etc and transform to validation types.  For example a "CountryCode" field is a string
 // in the avro schema and we convert it to a scala case class with a CountryCode type that has a

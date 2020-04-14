@@ -13,6 +13,8 @@ import enumeratum.EnumEntry.Snakecase
 import enumeratum._
 import org.apache.avro.Schema
 
+import scala.language.higherKinds
+
 object AvroClassConverterTest {
   case class TestTypes(userAge: Long,
                        userFloat: Float,
@@ -35,6 +37,10 @@ object AvroClassConverterTest {
 class AvroConverterTest extends AnyFlatSpec with Matchers {
 
   it should "round-trip via a generic record" in {
+    import AvroClassConverterTest._
+    import com.spotify.elitzur.converters.avro._
+    import com.spotify.elitzur.schemas.TestAvroEnum
+
     val schema: Schema = TestAvroEnum.getClassSchema
     val converter: AvroConverter[TestEnum] = implicitly
     val decoder = new BinaryMessageDecoder[TestAvroEnum](new SpecificData(), schema)

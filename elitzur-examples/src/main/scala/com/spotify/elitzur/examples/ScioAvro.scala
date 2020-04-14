@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory
 import com.spotify.elitzur.examples.Companions._
 import org.apache.beam.sdk.metrics.MetricName
 
+import scala.language.higherKinds
 
 // Example: Reading in Avro records within a Scio job and validating
 
