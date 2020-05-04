@@ -1,5 +1,8 @@
 # Elitzur Data Validation
 
+[![Lifecycle](https://img.shields.io/badge/lifecycle-production-1ed760.svg)](https://img.shields.io/badge/lifecycle-production-1ed760.svg)
+[![Build Status](https://img.shields.io/circleci/project/github/spotify/elitzur/master.svg)](https://circleci.com/gh/spotify/elitzur)
+
 ## Overview
 
 This library allows you to:
