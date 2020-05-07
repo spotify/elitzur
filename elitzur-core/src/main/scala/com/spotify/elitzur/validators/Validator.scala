@@ -24,6 +24,7 @@ import scala.language.experimental.macros
 import scala.language.{higherKinds, reflectiveCalls}
 import scala.reflect.{ClassTag, _}
 import scala.util.Try
+import scala.collection.compat._
 
 trait Validator[A] extends Serializable {
   def validateRecord(a: PreValidation[A],
@@ -148,7 +149,7 @@ private[elitzur] class OptionValidator[T: Validator] extends Validator[Option[T]
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
 private[elitzur]
 class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Builder[T, C[T]])
-                                                    (implicit toSeq: C[T] => TraversableOnce[T])
+                                                    (implicit toSeq: C[T] => IterableOnce[T])
   extends Validator[C[T]] {
   override def validateRecord(a: PreValidation[C[T]],
                               path: String,
@@ -250,7 +251,7 @@ object Validator extends Serializable {
 
   private[validators]
   def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Builder[T, C[T]])
-                                                        (implicit toSeq: C[T] => TraversableOnce[T],
+                                                        (implicit toSeq: C[T] => IterableOnce[T],
                                                          ev: ClassTag[C[T]]): Validator[C[T]] = {
     if (implicitly[Validator[T]].shouldValidate) {
       new SeqLikeValidator[T, C](builderFn)

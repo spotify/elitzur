@@ -34,6 +34,7 @@ import enumeratum._
 import scala.collection.JavaConverters._
 import scala.language.experimental.macros
 import scala.language.{higherKinds, reflectiveCalls}
+import scala.collection.compat._
 //scalastyle:on line.size.limit
 
 trait AvroConverter[T] extends Serializable {
@@ -203,7 +204,7 @@ private[elitzur] class AvroStatusOptionConverter[T <: BaseValidationType[_]: Avr
   * @tparam C The type of the sequence we want to convert
   */
 private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]](
-    builderFn: () => mutable.Builder[T, C[T]])(implicit toSeq: C[T] => TraversableOnce[T])
+    builderFn: () => mutable.Builder[T, C[T]])(implicit toSeq: C[T] => IterableOnce[T])
   extends AvroConverter[C[T]] {
   //TODO: Initialize lazily maybe?
   override def fromAvro(v: Any, schema: Schema, doc: Option[String] = None): C[T] = {

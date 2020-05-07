@@ -17,6 +17,8 @@
 package com.spotify.elitzur.validators
 
 import scala.util.Try
+import scala.Iterable
+import scala.collection.compat._
 
 private[this] case class PostValidationWrapper[A](inner: A) extends PostValidation[A] {
   override def isValid: Boolean = inner.asInstanceOf[PostValidation[_]].isValid
@@ -39,7 +41,7 @@ private[this] case class PostValidationWrapper[A](inner: A) extends PostValidati
   override def toString: String = inner.toString
 }
 
-trait ValidationStatus[+A] extends TraversableOnce[A] {
+trait ValidationStatus[+A] extends IterableOnce[A] {
   def isValid: Boolean
   def isNonvalidated: Boolean
   def isPostValidation: Boolean
@@ -57,7 +59,7 @@ trait ValidationStatus[+A] extends TraversableOnce[A] {
 
   override def hasDefiniteSize: Boolean = true
 
-  override def seq: TraversableOnce[A] = this.toSeq
+  override def seq: IterableOnce[A] = this.toSeq
 
   override def forall(p: A => Boolean): Boolean = p(this.forceGet)
 
@@ -69,7 +71,7 @@ trait ValidationStatus[+A] extends TraversableOnce[A] {
   override def copyToArray[B >: A](xs: Array[B], start: Int, len: Int): Unit =
     xs.update(start, this.forceGet)
 
-  override def toTraversable: Traversable[A] = this.asInstanceOf[Traversable[A]]
+  override def toTraversable: Iterable[A] = this.asInstanceOf[Iterable[A]]
 
   override def isTraversableAgain: Boolean = true
 
