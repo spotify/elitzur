@@ -22,7 +22,7 @@ import com.spotify.elitzur.converters.avro.AvroConverter
 import com.spotify.elitzur.validators.{PostValidation, ValidationRecordConfig, Validator}
 import com.spotify.scio.coders.Coder
 import com.spotify.scio.values.SCollection
-import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericRecord
 import org.apache.beam.sdk.transforms.ParDo
 
 import scala.reflect.ClassTag
@@ -35,12 +35,13 @@ trait Implicits {
 
     def validate(conf: ValidationRecordConfig = ValidationRecordConfig())
     : SCollection[T] = {
-      sc.withName("validate").applyTransform(ParDo.of(new ValidatorDoFn(vr)))
+      sc.withName("validate").applyTransform(ParDo.of(new ValidatorDoFn(vr, config = conf)))
     }
 
     def validateWithResult(conf: ValidationRecordConfig = ValidationRecordConfig())
     : SCollection[PostValidation[T]] = {
-      sc.withName("validateWithResult").applyTransform(ParDo.of(new ValidatorDoFnWithResult[T](vr)))
+      sc.withName("validateWithResult")
+        .applyTransform(ParDo.of(new ValidatorDoFnWithResult[T](vr, conf)))
     }
   }
 

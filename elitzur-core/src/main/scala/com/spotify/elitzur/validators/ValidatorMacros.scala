@@ -102,7 +102,7 @@ private[elitzur] object ValidatorMacros {
         args.mkString("[", ",", "]")
       }
       .getOrElse("")
-    val fullType = typeName + params
+    val fullType = typeName.toString + params
 
     val warning =
       s"""

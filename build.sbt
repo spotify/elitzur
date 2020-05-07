@@ -57,11 +57,14 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   releaseSettings ++ Seq(
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
-  scalaVersion          := "2.12.10",
-  scalacOptions         ++= Seq("-target:jvm-1.8",
+  scalaVersion          := "2.13.1",
+  scalacOptions         ++= Seq(
+    "-target:jvm-1.8",
     "-deprecation",
     "-feature",
-    "-unchecked"),
+    "-unchecked",
+    "-language:higherKinds", // Allow higher-kinded types
+  ),
 //    "-Xlog-implicits"),
   scalacOptions ++= {
     if (isScala213x.value) {

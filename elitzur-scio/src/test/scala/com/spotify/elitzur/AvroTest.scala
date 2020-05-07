@@ -31,7 +31,8 @@ import org.apache.beam.sdk.Pipeline.PipelineExecutionException
 import org.scalacheck.{Arbitrary, Gen}
 import com.spotify.ratatool.scalacheck._
 
-import scala.collection.JavaConverters._
+import scala.collection.compat._
+import scala.jdk.CollectionConverters._
 
 
 sealed trait TestEnum extends EnumEntry with Product with Serializable

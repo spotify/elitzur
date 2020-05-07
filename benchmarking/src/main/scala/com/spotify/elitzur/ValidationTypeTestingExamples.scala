@@ -19,7 +19,6 @@ package com.spotify.elitzur
 import java.util.Locale
 
 import com.spotify.elitzur.types.Owner
-import Companions._
 import com.spotify.elitzur.validators.{BaseCompanion, BaseValidationType, SimpleCompanionImplicit}
 
 /**

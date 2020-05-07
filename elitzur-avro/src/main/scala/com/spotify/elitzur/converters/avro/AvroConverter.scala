@@ -17,13 +17,10 @@
 package com.spotify.elitzur.converters.avro
 
 //scalastyle:off line.size.limit
-import java.util.Collections
-
 import com.spotify.elitzur.validators.{BaseValidationType, DynamicCompanionImplicit, DynamicValidationType, SimpleCompanionImplicit, Unvalidated, ValidationStatus}
 import org.apache.avro.generic._
 import com.spotify.scio.coders.Coder
 
-import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import com.spotify.elitzur.{Utils => SharedUtils}
@@ -31,9 +28,8 @@ import magnolia._
 import org.apache.avro.Schema
 import enumeratum._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.language.experimental.macros
-import scala.language.{higherKinds, reflectiveCalls}
 import scala.collection.compat._
 //scalastyle:on line.size.limit
 

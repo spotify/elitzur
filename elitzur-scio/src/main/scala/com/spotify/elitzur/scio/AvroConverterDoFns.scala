@@ -19,11 +19,10 @@ package com.spotify.elitzur.scio
 import com.spotify.elitzur.converters.avro.{AvroConverter, AvroElitzurConversionUtils}
 import com.spotify.scio.coders.Coder
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.DoFn.ProcessElement
 
-import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 class FromAvroConverterDoFn[GR <: GenericRecord, T : Coder](ac: AvroConverter[T])

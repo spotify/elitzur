@@ -21,7 +21,7 @@ import magnolia._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
-import scala.language.{higherKinds, reflectiveCalls}
+import scala.language.{reflectiveCalls}
 import scala.reflect.{ClassTag, _}
 import scala.util.Try
 import scala.collection.compat._

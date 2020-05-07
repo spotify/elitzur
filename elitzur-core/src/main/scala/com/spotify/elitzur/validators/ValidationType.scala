@@ -16,7 +16,7 @@
  */
 package com.spotify.elitzur.validators
 
-import scala.language.{reflectiveCalls, higherKinds, existentials}
+import scala.language.{reflectiveCalls, existentials}
 import scala.util.Try
 
 trait BaseValidationType[T] {
