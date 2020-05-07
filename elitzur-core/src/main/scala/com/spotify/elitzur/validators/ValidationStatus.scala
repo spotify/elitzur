@@ -58,7 +58,7 @@ trait ValidationStatus[+A] extends IterableOnce[A] {
 
   def hasDefiniteSize: Boolean = true
 
-  def seq: IterableOnce[A] = this.toSeq
+  def seq: IterableOnce[A] = this
 
   def forall(p: A => Boolean): Boolean = p(this.forceGet)
 

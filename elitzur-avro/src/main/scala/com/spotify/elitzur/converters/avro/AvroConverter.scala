@@ -31,6 +31,7 @@ import enumeratum._
 import scala.jdk.CollectionConverters._
 import scala.language.experimental.macros
 import scala.collection.compat._
+import scala.collection.compat.immutable.ArraySeq
 //scalastyle:on line.size.limit
 
 trait AvroConverter[T] extends Serializable {
@@ -215,9 +216,9 @@ private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]]
     val c = implicitly[AvroConverter[T]]
     // avro expects a list
     val output: java.util.List[Any] = new java.util.ArrayList[Any]
-    for (i <- toSeq(v)) {
+    toSeq(v).iterator.foreach(i => {
       output.add(c.toAvro(i, schema.getElementType))
-    }
+    })
     output
   }
 
@@ -229,13 +230,13 @@ private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]]
     val isNestedRecord = AvroElitzurConversionUtils
       .isAvroRecordType(defaultGenericContainer.getSchema.getElementType)
     if (isNestedRecord) {
-      for (i <- toSeq(v)) {
+      toSeq(v).iterator.foreach(i => {
         output.add(c.toAvroDefault(i, firstDefault.asInstanceOf[GenericRecord]))
-      }
+      })
     } else {
-      for (i <- toSeq(v)) {
+      toSeq(v).iterator.foreach(i => {
         output.add(c.toAvroDefault(i, defaultGenericContainer))
-      }
+      })
     }
     output
   }
@@ -309,7 +310,7 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
       )
       i += 1
     }
-    caseClass.rawConstruct(cs)
+    caseClass.rawConstruct(ArraySeq.unsafeWrapArray(cs))
   }
 
   override def toAvro(v: T, schema: Schema): Any = {

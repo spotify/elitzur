@@ -21,7 +21,6 @@ import magnolia._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
-import scala.language.{reflectiveCalls}
 import scala.reflect.{ClassTag, _}
 import scala.util.Try
 import scala.collection.compat._
@@ -159,13 +158,13 @@ class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Bu
     var atLeastOneInvalid = false
     val v = implicitly[Validator[T]]
     val builder = builderFn()
-    for (ele <- toSeq(a.forceGet)) {
+    toSeq(a.forceGet).iterator.foreach(ele => {
       val res = v.validateRecord(Unvalidated(ele), path, outermostClassName, config)
       if (!atLeastOneInvalid && res.isInvalid) {
         atLeastOneInvalid = true
       }
       builder += res.forceGet
-    }
+    })
 
     if (atLeastOneInvalid) {
       Invalid(builder.result())
