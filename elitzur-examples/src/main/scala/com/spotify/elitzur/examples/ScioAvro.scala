@@ -109,7 +109,7 @@ object ScioAvro {
     val logString =
       counters
         .foldLeft("")((acc, d) => {
-          s"$acc\n Counter ${d._1} has value ${d._2.committed.getOrElse("")}"
+          s"$acc\n Counter ${d._1.toString} has value ${d._2.committed.getOrElse(0L).toString}"
         })
 
     logger.info(s"Logging Elitzur Counters: $logString \n Done logging Elitzur Counters")

@@ -159,7 +159,7 @@ class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Bu
     var atLeastOneInvalid = false
     val v = implicitly[Validator[T]]
     val builder = builderFn()
-    for (ele <- a.forceGet) {
+    for (ele <- toSeq(a.forceGet)) {
       val res = v.validateRecord(Unvalidated(ele), path, outermostClassName, config)
       if (!atLeastOneInvalid && res.isInvalid) {
         atLeastOneInvalid = true

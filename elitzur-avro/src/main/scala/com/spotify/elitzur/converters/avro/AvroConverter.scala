@@ -219,7 +219,7 @@ private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]]
     val c = implicitly[AvroConverter[T]]
     // avro expects a list
     val output: java.util.List[Any] = new java.util.ArrayList[Any]
-    for (i <- v) {
+    for (i <- toSeq(v)) {
       output.add(c.toAvro(i, schema.getElementType))
     }
     output
@@ -233,11 +233,11 @@ private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]]
     val isNestedRecord = AvroElitzurConversionUtils
       .isAvroRecordType(defaultGenericContainer.getSchema.getElementType)
     if (isNestedRecord) {
-      for (i <- v) {
+      for (i <- toSeq(v)) {
         output.add(c.toAvroDefault(i, firstDefault.asInstanceOf[GenericRecord]))
       }
     } else {
-      for (i <- v) {
+      for (i <- toSeq(v)) {
         output.add(c.toAvroDefault(i, defaultGenericContainer))
       }
     }

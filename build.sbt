@@ -19,17 +19,18 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.8.3"
-val beamVersion = "2.19.0" // must stay in sync with scio
+val scioVersion = "0.9.0"
+val beamVersion = "2.20.0" // must stay in sync with scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.1"
 val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.5"
-val magnoliaVersion = "0.12.6"
-val ratatoolVersion = "0.3.14"
+val magnoliaVersion = "0.16.0"
+val ratatoolVersion = "0.3.18"
 val scalaCheckVersion = "1.14.3"
 val enumeratumVersion = "1.5.14"
+val scalaCollectionsCompatVersion = "2.1.6"
 
 
 val disableWarts = Set(
@@ -48,6 +49,10 @@ val disableWarts = Set(
   Wart.Any
 )
 
+def isScala213x: Def.Initialize[Boolean] = Def.setting {
+  scalaBinaryVersion.value == "2.13"
+}
+
 lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSettings ++
   releaseSettings ++ Seq(
   organization          := "com.spotify",
@@ -58,6 +63,13 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
     "-feature",
     "-unchecked"),
 //    "-Xlog-implicits"),
+  scalacOptions ++= {
+    if (isScala213x.value) {
+      Seq("-Ymacro-annotations", "-Ywarn-unused")
+    } else {
+      Seq()
+    }
+  },
   javacOptions          ++= Seq("-source", "1.8",
     "-target", "1.8"),
 
@@ -73,9 +85,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.8", "2.11.12"),
-
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+  crossScalaVersions := Seq("2.12.10", "2.13.1"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -84,16 +94,19 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
     "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
     "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion % "test",
     "joda-time" % "joda-time" % jodaTimeVersion,
-    {
-      // this is what scio does for 2.11 support see https://github.com/spotify/scio/pull/2241
-      if (scalaBinaryVersion.value == "2.11") {
-        "me.lyh" %% "magnolia" % "0.10.1-jto"
-      } else {
-        "com.propensive" %% "magnolia" % magnoliaVersion
-      }
-    },
+    "com.propensive" %% "magnolia" % magnoliaVersion,
     "com.beachape" %% "enumeratum" % enumeratumVersion,
+    "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatVersion,
   ),
+  libraryDependencies ++= {
+    if (isScala213x.value) {
+      Seq()
+    } else {
+      Seq(
+        compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+      )
+    }
+  },
 
   // Avro files are compiled to src_managed/main/compiled_avro
   // Exclude their parent to avoid confusing IntelliJ

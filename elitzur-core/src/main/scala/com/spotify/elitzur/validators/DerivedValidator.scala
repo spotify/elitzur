@@ -66,7 +66,7 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
             else if (v.isInvalid) {
               if (c == ThrowException) {
                 throw new DataInvalidException(
-                  s"Invalid value ${v.forceGet} found for field $path${p.label}")
+                  s"Invalid value ${v.forceGet.toString} found for field $path${p.label}")
               }
               if (c != NoCounter) {
                 reporter.reportInvalid(
