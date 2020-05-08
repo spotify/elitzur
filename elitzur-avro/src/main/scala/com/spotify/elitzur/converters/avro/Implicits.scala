@@ -21,7 +21,6 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import enumeratum._
 
-import scala.language.reflectiveCalls
 import scala.reflect.ClassTag
 
 trait Implicits {

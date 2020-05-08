@@ -11,11 +11,11 @@ executors:
       - image: circleci/openjdk:8-jdk
     environment:
       SCALA_VERSION: 2.12.10
-  scala_211:
+  scala_213:
     docker:
       - image: circleci/openjdk:8-jdk
     environment:
-      SCALA_VERSION: 2.11.12
+      SCALA_VERSION: 2.13.1
 
 commands:
   build:
@@ -67,32 +67,32 @@ jobs:
     steps:
       - build
       
-  avro_211:
-    executor: scala_211
+  avro_213:
+    executor: scala_213
     environment:
       TEST_PROJECT=elitzur-avro
     steps:
       - build
-  core_211:
-    executor: scala_211
+  core_213:
+    executor: scala_213
     environment:
       TEST_PROJECT=elitzur-core
     steps:
       - build
-  examples_211:
-    executor: scala_211
+  examples_213:
+    executor: scala_213
     environment:
       TEST_PROJECT=elitzur-examples
     steps:
       - build
-  schemas_211:
-    executor: scala_211
+  schemas_213:
+    executor: scala_213
     environment:
       TEST_PROJECT=elitzur-schemas
     steps:
       - build
-  scio_211:
-    executor: scala_211
+  scio_213:
+    executor: scala_213
     environment:
       TEST_PROJECT=elitzur-scio
     steps:
@@ -115,8 +115,8 @@ workflows:
       - schemas_212
       - scio_212
 
-      - avro_211
-      - core_211
-      - examples_211
-      - schemas_211
-      - scio_211
+      - avro_213
+      - core_213
+      - examples_213
+      - schemas_213
+      - scio_213

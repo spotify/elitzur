@@ -28,10 +28,10 @@ object ConverterMacros {
 
     def getLazyVal =
       magTree match {
-        case q"lazy val $name = $body; $rest" =>
+        case q"lazy val $_ = $body; $_" =>
           body
 
-        case q"val $name = $body; $rest" =>
+        case q"val $_ = $body; $_" =>
           body
       }
 
@@ -43,20 +43,20 @@ object ConverterMacros {
       override def transform(tree: Tree): c.universe.Tree = {
         tree match {
           case Apply(AppliedTypeTree(Select(pack, TypeName("CaseClass")), ps),
-          List(typeName, isObject, isValueClass, params, annotations)) =>
+          List(typeName, isObject, isValueClass, params, _)) =>
             Apply(AppliedTypeTree(Select(pack, TypeName("CaseClass")), ps),
               List(typeName, isObject, isValueClass, params, q"""Array()"""))
 
-          case q"""new magnolia.CaseClass[$tc, $t]($typeName, $isObject, $isValueClass, $params, $annotations){ $body }""" =>
+          case q"""new magnolia.CaseClass[$tc, $t]($typeName, $isObject, $isValueClass, $params, $_){ $body }""" =>
             q"""_root_.magnolia.CaseClass[$tc, $t]($typeName, $isObject, $isValueClass, $params, Array()){ $body }"""
 
-          case q"com.spotify.elitzur.AvroConverter.dispatch(new magnolia.SealedTrait($name, $subtypes, $annotations))" =>
+          case q"com.spotify.elitzur.AvroConverter.dispatch(new magnolia.SealedTrait($name, $subtypes, $_))" =>
             q"_root_.com.spotify.elitzur.AvroConverter.dispatch(new magnolia.SealedTrait($name, $subtypes, Array()))"
 
-          case q"""magnolia.Magnolia.param[$tc, $t, $p]($name, $idx, $repeated, $tcParam, $defaultVal, $annotations)""" =>
+          case q"""magnolia.Magnolia.param[$tc, $t, $p]($name, $idx, $repeated, $tcParam, $defaultVal, $_)""" =>
             q"""_root_.magnolia.Magnolia.param[$tc, $t, $p]($name, $idx, $repeated, $tcParam, $defaultVal, Array())"""
 
-          case t =>
+          case _ =>
             super.transform(tree)
         }
       }

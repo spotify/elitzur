@@ -13,8 +13,6 @@ import enumeratum.EnumEntry.Snakecase
 import enumeratum._
 import org.apache.avro.Schema
 
-import scala.language.higherKinds
-
 object AvroClassConverterTest {
   case class TestTypes(userAge: Long,
                        userFloat: Float,
