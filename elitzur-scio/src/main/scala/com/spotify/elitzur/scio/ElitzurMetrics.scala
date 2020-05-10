@@ -25,6 +25,7 @@ import com.spotify.scio.{ScioMetrics, ScioResult, metrics}
 import org.apache.beam.sdk.metrics.{Counter, MetricName}
 
 import scala.annotation.tailrec
+import scala.collection.compat.immutable.ArraySeq
 
 object ElitzurMetrics {
 
@@ -63,7 +64,9 @@ object ElitzurMetrics {
 
   private[elitzur] def getValidationTypeFromCaseClass(className: Class[_], fieldName: String)
   : String =
-    getValidationTypeFromCaseClass(className, fieldName.split("\\.")).getSimpleName
+    getValidationTypeFromCaseClass(
+      className, ArraySeq.unsafeWrapArray(fieldName.split("\\."))
+    ).getSimpleName
 
   private def getParameterizedInnerType(genericType: Type): Type = {
     // removes one layer of type nesting from reflection

@@ -21,6 +21,8 @@ import java.lang.{StringBuilder => JStringBuilder}
 import com.spotify.elitzur.{DataInvalidException, MetricsReporter}
 import magnolia._
 
+import scala.collection.compat.immutable.ArraySeq
+
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
 final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseClass[Validator, T])
                                                              (implicit reporter: MetricsReporter)
@@ -66,7 +68,7 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
             else if (v.isInvalid) {
               if (c == ThrowException) {
                 throw new DataInvalidException(
-                  s"Invalid value ${v.forceGet} found for field $path${p.label}")
+                  s"Invalid value ${v.forceGet.toString} found for field $path${p.label}")
               }
               if (c != NoCounter) {
                 reporter.reportInvalid(
@@ -103,7 +105,7 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
       i = i + 1
     }
 
-    val record = caseClass.rawConstruct(cs)
+    val record = caseClass.rawConstruct(ArraySeq.unsafeWrapArray(cs))
 
     if (atLeastOneInvalid){
       Invalid(record)

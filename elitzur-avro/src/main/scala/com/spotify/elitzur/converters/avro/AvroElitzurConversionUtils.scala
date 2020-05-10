@@ -21,7 +21,7 @@ import java.nio.ByteBuffer
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object AvroElitzurConversionUtils {
   private[elitzur] def getAvroField(r: GenericRecord, fieldName: Seq[String]): Object = {
