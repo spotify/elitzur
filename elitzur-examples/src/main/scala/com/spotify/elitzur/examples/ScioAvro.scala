@@ -18,15 +18,12 @@ package com.spotify.elitzur.examples
 
 
 import com.spotify.scio._
-import com.spotify.scio.avro._
 import com.spotify.elitzur.schemas.{InnerNestedType, TestAvroTypes}
-import com.spotify.elitzur.converters._
 import com.spotify.elitzur.scio._
 import com.spotify.elitzur.validators._
 import org.slf4j.LoggerFactory
 import com.spotify.elitzur.examples.Companions._
 import org.apache.beam.sdk.metrics.MetricName
-
 
 // Example: Reading in Avro records within a Scio job and validating
 
@@ -82,7 +79,7 @@ object ScioAvro {
   One can then go back to a standard file format, e.g. in this case back to Avro to persist the data
    */
   def main(cmdlineArgs: Array[String]): Unit = {
-    val (sc, args) = ContextAndArgs(cmdlineArgs)
+    val (sc, _) = ContextAndArgs(cmdlineArgs)
     // For reading in real avro files, can use
     // val records = sc.typedAvroFile[TestAvroTypes](inputPath) instead
     val records = sc.parallelize(avroRecords)
@@ -108,7 +105,7 @@ object ScioAvro {
     val logString =
       counters
         .foldLeft("")((acc, d) => {
-          s"$acc\n Counter ${d._1} has value ${d._2.committed.getOrElse("")}"
+          s"$acc\n Counter ${d._1.toString} has value ${d._2.committed.getOrElse(0L).toString}"
         })
 
     logger.info(s"Logging Elitzur Counters: $logString \n Done logging Elitzur Counters")

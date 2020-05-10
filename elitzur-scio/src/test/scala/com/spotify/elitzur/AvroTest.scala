@@ -18,7 +18,6 @@ package com.spotify.elitzur
 
 
 import com.spotify.elitzur.converters.avro._
-import com.spotify.elitzur.example._
 import ValidationTypeImplicits._
 import com.spotify.elitzur.scio._
 import com.spotify.elitzur.validators._
@@ -30,9 +29,6 @@ import org.apache.avro.util.Utf8
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException
 import org.scalacheck.{Arbitrary, Gen}
 import com.spotify.ratatool.scalacheck._
-
-import scala.collection.JavaConverters._
-
 
 sealed trait TestEnum extends EnumEntry with Product with Serializable
 
@@ -365,7 +361,7 @@ class AvroTest extends PipelineSpec {
         .toAvroDefault[RepeatedRecord](testRecordDefault)
       .map(_.getRepeatedRecord.get(0).getLongField)
     ) shouldEqual
-      testRecords.map(e => testRecordDefault.getRepeatedRecord.get(0).getLongField).toSeq
+      testRecords.map(_ => testRecordDefault.getRepeatedRecord.get(0).getLongField).toSeq
   }
 
   "AvroCaseClassConverter" should "fail to convert for a " +

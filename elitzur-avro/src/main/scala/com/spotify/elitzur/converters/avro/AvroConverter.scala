@@ -17,13 +17,10 @@
 package com.spotify.elitzur.converters.avro
 
 //scalastyle:off line.size.limit
-import java.util.Collections
-
 import com.spotify.elitzur.validators.{BaseValidationType, DynamicCompanionImplicit, DynamicValidationType, SimpleCompanionImplicit, Unvalidated, ValidationStatus}
 import org.apache.avro.generic._
 import com.spotify.scio.coders.Coder
 
-import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import com.spotify.elitzur.{Utils => SharedUtils}
@@ -31,9 +28,10 @@ import magnolia._
 import org.apache.avro.Schema
 import enumeratum._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.language.experimental.macros
-import scala.language.{higherKinds, reflectiveCalls}
+import scala.collection.compat._
+import scala.collection.compat.immutable.ArraySeq
 //scalastyle:on line.size.limit
 
 trait AvroConverter[T] extends Serializable {
@@ -74,7 +72,11 @@ private[elitzur] class OptionConverter[T: AvroConverter] extends AvroConverter[O
   override def toAvro(v: Option[T], schema: Schema): Any = {
     v match {
       case None => null
-      case Some(t) => implicitly[AvroConverter[T]].toAvro(t, schema)
+      case Some(t) =>
+        schema.getTypes.asScala.toList.filterNot(_.getType == Schema.Type.NULL) match {
+          case head :: Nil => implicitly[AvroConverter[T]].toAvro(t, head)
+          case _ => throw new IllegalArgumentException("Option may only be UNION of two types")
+        }
     }
   }
 
@@ -131,7 +133,11 @@ private[elitzur] class AvroOptionConverter[T <: BaseValidationType[_]: AvroConve
   override def toAvro(v: Option[T], schema: Schema): Any = {
     v match {
       case None => null
-      case Some(t) => implicitly[AvroConverter[T]].toAvro(t, schema)
+      case Some(t) =>
+        schema.getTypes.asScala.toList.filterNot(_.getType == Schema.Type.NULL) match {
+          case head :: Nil => implicitly[AvroConverter[T]].toAvro(t, head)
+          case _ => throw new IllegalArgumentException("Option may only be UNION of two types")
+        }
     }
   }
 
@@ -195,7 +201,7 @@ private[elitzur] class AvroStatusOptionConverter[T <: BaseValidationType[_]: Avr
   * @tparam C The type of the sequence we want to convert
   */
 private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]](
-    builderFn: () => mutable.Builder[T, C[T]])(implicit toSeq: C[T] => TraversableOnce[T])
+    builderFn: () => mutable.Builder[T, C[T]])(implicit toSeq: C[T] => IterableOnce[T])
   extends AvroConverter[C[T]] {
   //TODO: Initialize lazily maybe?
   override def fromAvro(v: Any, schema: Schema, doc: Option[String] = None): C[T] = {
@@ -210,9 +216,9 @@ private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]]
     val c = implicitly[AvroConverter[T]]
     // avro expects a list
     val output: java.util.List[Any] = new java.util.ArrayList[Any]
-    for (i <- v) {
+    toSeq(v).iterator.foreach(i => {
       output.add(c.toAvro(i, schema.getElementType))
-    }
+    })
     output
   }
 
@@ -224,13 +230,13 @@ private[elitzur] class AvroSeqConverter[T: AvroConverter: Coder: ClassTag, C[_]]
     val isNestedRecord = AvroElitzurConversionUtils
       .isAvroRecordType(defaultGenericContainer.getSchema.getElementType)
     if (isNestedRecord) {
-      for (i <- v) {
+      toSeq(v).iterator.foreach(i => {
         output.add(c.toAvroDefault(i, firstDefault.asInstanceOf[GenericRecord]))
-      }
+      })
     } else {
-      for (i <- v) {
+      toSeq(v).iterator.foreach(i => {
         output.add(c.toAvroDefault(i, defaultGenericContainer))
-      }
+      })
     }
     output
   }
@@ -257,7 +263,7 @@ private[elitzur] class AvroEnumConverter[T <: enumeratum.EnumEntry: Enum] extend
   override def fromAvro(v: Any, schema: Schema, doc: Option[String]): T =
     implicitly[Enum[T]].withName(v.toString)
 
-  override def toAvro(v: T, schema: Schema): Any = new GenericData.EnumSymbol(schema, v.toString)
+  override def toAvro(v: T, schema: Schema): Any = new GenericData.EnumSymbol(schema, v.entryName)
 
   override def toAvroDefault(v: T, defaultGenericContainer: GenericContainer): Any =
     v.asInstanceOf[Any]
@@ -304,20 +310,19 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
       )
       i += 1
     }
-    caseClass.rawConstruct(cs)
+    caseClass.rawConstruct(ArraySeq.unsafeWrapArray(cs))
   }
 
   override def toAvro(v: T, schema: Schema): Any = {
     val ps = caseClass.parameters
     var i = 0
-    val cleanSchema = AvroElitzurConversionUtils.getNestedRecordSchema(schema)
-    val builder = new GenericRecordBuilder(cleanSchema)
+    val builder = new GenericRecordBuilder(schema)
 
     while (i < ps.length) {
       val p = ps(i)
       val deref = p.dereference(v)
 
-      val fieldName = if (cleanSchema.getField(p.label) == null) {
+      val fieldName = if (schema.getField(p.label) == null) {
         SharedUtils.camelToSnake(p.label)
       } else {
         p.label
@@ -325,7 +330,7 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
 
       builder.set(
         fieldName,
-        p.typeclass.toAvro(deref, cleanSchema.getField(fieldName).schema()))
+        p.typeclass.toAvro(deref, schema.getField(fieldName).schema()))
       i += 1
     }
     builder.build()

@@ -18,10 +18,12 @@ package com.spotify.elitzur.scio
 
 import com.spotify.elitzur.CountryCodeTesting
 import com.spotify.elitzur.validators.ValidationStatus
-import org.scalatest.{FlatSpec, Matchers, PrivateMethodTester}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{FlatSpec, PrivateMethodTester}
 
 //scalastyle:off no.whitespace.before.left.bracket
-class ElitzurMetricsTest extends FlatSpec with PrivateMethodTester with Matchers {
+class ElitzurMetricsTest extends AnyFlatSpec with PrivateMethodTester with Matchers {
 
   case class Test(test: Int)
 

@@ -17,6 +17,7 @@
 package com.spotify.elitzur.validators
 
 import scala.util.Try
+import scala.collection.compat._
 
 private[this] case class PostValidationWrapper[A](inner: A) extends PostValidation[A] {
   override def isValid: Boolean = inner.asInstanceOf[PostValidation[_]].isValid
@@ -39,7 +40,7 @@ private[this] case class PostValidationWrapper[A](inner: A) extends PostValidati
   override def toString: String = inner.toString
 }
 
-trait ValidationStatus[+A] extends TraversableOnce[A] {
+trait ValidationStatus[+A] extends IterableOnce[A] {
   def isValid: Boolean
   def isNonvalidated: Boolean
   def isPostValidation: Boolean
@@ -51,31 +52,34 @@ trait ValidationStatus[+A] extends TraversableOnce[A] {
 
   def toOption: Option[A]
 
-  override def foreach[U](f: A => U): Unit = f(this.forceGet)
+  def foreach[U](f: A => U): Unit = f(this.forceGet)
 
-  override def isEmpty: Boolean = false
+  def isEmpty: Boolean = false
 
-  override def hasDefiniteSize: Boolean = true
+  def hasDefiniteSize: Boolean = true
 
-  override def seq: TraversableOnce[A] = this.toSeq
+  def seq: IterableOnce[A] = this
 
-  override def forall(p: A => Boolean): Boolean = p(this.forceGet)
+  def forall(p: A => Boolean): Boolean = p(this.forceGet)
 
-  override def exists(p: A => Boolean): Boolean = p(this.forceGet)
+  def exists(p: A => Boolean): Boolean = p(this.forceGet)
 
-  override def find(p: A => Boolean): Option[A] =
+  def find(p: A => Boolean): Option[A] =
     if (p(this.forceGet)) Some(this.forceGet) else None
 
-  override def copyToArray[B >: A](xs: Array[B], start: Int, len: Int): Unit =
+  def copyToArray[B >: A](xs: Array[B], start: Int, len: Int): Unit =
     xs.update(start, this.forceGet)
 
-  override def toTraversable: Traversable[A] = this.asInstanceOf[Traversable[A]]
+  def toTraversable: Iterable[A] = this.asInstanceOf[Iterable[A]]
 
-  override def isTraversableAgain: Boolean = true
+  def isTraversableAgain: Boolean = true
 
-  override def toStream: Stream[A] = Stream(this.forceGet)
+  def toStream: Stream[A] = Stream(this.forceGet)
 
-  override def toIterator: Iterator[A] = Iterator(this.forceGet)
+  def toIterator: Iterator[A] = this.iterator
+
+  def iterator: Iterator[A] = Iterator(this.forceGet)
+
 }
 
 abstract class PreValidation[+A] extends ValidationStatus[A] {
@@ -164,5 +168,5 @@ final case class Invalid[+A](x: A) extends PostValidation[A] {
   override def isNonvalidated: Boolean = false
 
   // Override this so flatten and flatMap skip Invalid records
-  override def toIterator: Iterator[A] = Iterator()
+  override def iterator: Iterator[A] = Iterator()
 }

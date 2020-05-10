@@ -21,9 +21,9 @@ import magnolia._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
-import scala.language.{higherKinds, reflectiveCalls}
 import scala.reflect.{ClassTag, _}
 import scala.util.Try
+import scala.collection.compat._
 
 trait Validator[A] extends Serializable {
   def validateRecord(a: PreValidation[A],
@@ -148,7 +148,7 @@ private[elitzur] class OptionValidator[T: Validator] extends Validator[Option[T]
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
 private[elitzur]
 class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Builder[T, C[T]])
-                                                    (implicit toSeq: C[T] => TraversableOnce[T])
+                                                    (implicit toSeq: C[T] => IterableOnce[T])
   extends Validator[C[T]] {
   override def validateRecord(a: PreValidation[C[T]],
                               path: String,
@@ -158,13 +158,13 @@ class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Bu
     var atLeastOneInvalid = false
     val v = implicitly[Validator[T]]
     val builder = builderFn()
-    for (ele <- a.forceGet) {
+    toSeq(a.forceGet).iterator.foreach(ele => {
       val res = v.validateRecord(Unvalidated(ele), path, outermostClassName, config)
       if (!atLeastOneInvalid && res.isInvalid) {
         atLeastOneInvalid = true
       }
       builder += res.forceGet
-    }
+    })
 
     if (atLeastOneInvalid) {
       Invalid(builder.result())
@@ -250,7 +250,7 @@ object Validator extends Serializable {
 
   private[validators]
   def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Builder[T, C[T]])
-                                                        (implicit toSeq: C[T] => TraversableOnce[T],
+                                                        (implicit toSeq: C[T] => IterableOnce[T],
                                                          ev: ClassTag[C[T]]): Validator[C[T]] = {
     if (implicitly[Validator[T]].shouldValidate) {
       new SeqLikeValidator[T, C](builderFn)

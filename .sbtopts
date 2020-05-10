@@ -1,6 +1,0 @@
--J-Xmx6G
--J-Xms2G
--J-Xss1M
--J-XX:MaxMetaspaceSize=1G
--J-XX:+CMSClassUnloadingEnabled
--J-XX:ReservedCodeCacheSize=128m

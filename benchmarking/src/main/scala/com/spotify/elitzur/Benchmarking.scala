@@ -22,7 +22,6 @@ import com.spotify.elitzur.validators.{PostValidation, Unvalidated, Validator}
 import com.spotify.elitzur.scio._
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
 
-
 object CaseClassesToValidate {
   case class ThreeFields(
                           age: AgeExample,

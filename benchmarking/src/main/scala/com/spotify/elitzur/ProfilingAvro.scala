@@ -26,7 +26,6 @@ import com.spotify.elitzur.Companions._
 import com.spotify.elitzur.validators.{Unvalidated, Validator}
 import org.scalacheck._
 
-
 object ProfilingAvro {
   case class TestAvro(
                        userAge: AgeExample,

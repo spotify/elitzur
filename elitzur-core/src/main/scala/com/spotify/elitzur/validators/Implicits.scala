@@ -16,7 +16,6 @@
  */
 package com.spotify.elitzur.validators
 
-import scala.collection.mutable
 import scala.reflect.ClassTag
 
 trait Implicits {
