@@ -29,7 +29,7 @@ val jodaTimeVersion = "2.10.5"
 val magnoliaVersion = "0.16.0"
 val ratatoolVersion = "0.3.18"
 val scalaCheckVersion = "1.14.3"
-val enumeratumVersion = "1.5.14"
+val enumeratumVersion = "1.5.15"
 val scalaCollectionsCompatVersion = "2.1.6"
 
 
