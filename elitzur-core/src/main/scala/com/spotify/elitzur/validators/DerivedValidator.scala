@@ -33,18 +33,14 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
                               outermostClassName: Option[String] = None,
                               config: ValidationRecordConfig = DefaultRecordConfig)
   : PostValidation[T] = {
-    val ps = caseClass.parameters
-    val cs = new Array[Any](ps.length)
-    var i = 0
     var atLeastOneValid = false
     var atLeastOneInvalid = false
 
     val counterClassName =
       if (outermostClassName.isEmpty) caseClass.typeName.full else outermostClassName.get
-    while (i < ps.length) {
-      val p = ps(i)
-      val deref = p.dereference(a.forceGet)
-      val v =
+    val cs = caseClass.parameters
+      .map{ p =>
+        val deref = p.dereference(a.forceGet)
         if (!p.typeclass.isInstanceOf[IgnoreValidator[_]]) {
           val name = new JStringBuilder(path.length + p.label.length)
             .append(path).append(p.label).toString
@@ -101,11 +97,9 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
         else {
           deref
         }
-      cs.update(i, v)
-      i = i + 1
-    }
+      }
 
-    val record = caseClass.rawConstruct(ArraySeq.unsafeWrapArray(cs))
+    val record = caseClass.rawConstruct(cs)
 
     if (atLeastOneInvalid){
       Invalid(record)
@@ -118,19 +112,7 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
     }
   }
 
-  override def shouldValidate: Boolean = {
-    val ps = caseClass.parameters
-    var i = 0
-    var shouldValidate = false
-
-    while (i < ps.length) {
-      val p = ps(i)
-      if (p.typeclass.shouldValidate) {
-        shouldValidate = true
-      }
-      i = i + 1
-    }
-    shouldValidate
-  }
+  override def shouldValidate: Boolean =
+    caseClass.parameters.exists(p => p.typeclass.shouldValidate)
   //scalastyle:on method.length cyclomatic.complexity
 }
