@@ -20,7 +20,7 @@ import com.spotify.elitzur.CountryCodeTesting
 import com.spotify.elitzur.validators.ValidationStatus
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{FlatSpec, PrivateMethodTester}
+import org.scalatest.PrivateMethodTester
 
 //scalastyle:off no.whitespace.before.left.bracket
 class ElitzurMetricsTest extends AnyFlatSpec with PrivateMethodTester with Matchers {
