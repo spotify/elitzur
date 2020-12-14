@@ -16,6 +16,6 @@
  */
 package com.spotify.elitzur.types
 
-private[elitzur] trait Owner {
+trait Owner {
   def name: String
 }
