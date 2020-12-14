@@ -21,7 +21,7 @@ import com.typesafe.sbt.SbtGit.GitKeys._
 // Variables:
 val scioVersion = "0.9.5"
 val beamVersion = "2.24.0" // must stay in sync with scio
-val avroVersion = "1.8.2"
+val avroVersion = "1.10.1"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
