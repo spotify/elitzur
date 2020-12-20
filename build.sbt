@@ -30,7 +30,7 @@ val magnoliaVersion = "0.17.0"
 val ratatoolVersion = "0.3.20"
 val scalaCheckVersion = "1.14.3"
 val enumeratumVersion = "1.5.15"
-val scalaCollectionsCompatVersion = "2.2.0"
+val scalaCollectionsCompatVersion = "2.3.2"
 
 
 val disableWarts = Set(
