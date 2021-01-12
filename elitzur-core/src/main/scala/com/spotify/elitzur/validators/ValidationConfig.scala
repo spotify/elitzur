@@ -16,24 +16,27 @@
  */
 package com.spotify.elitzur.validators
 
-trait ValidationConfig
-trait ValidationFieldConfig extends ValidationConfig
+trait ValidationConfig extends Serializable
 
 trait ValidationRecordConfig extends ValidationConfig {
-  def m: Map[String, ValidationConfig]
+  def fieldConfig(name: String): ValidationFieldConfig
 }
 
-case class MapConfig(m: Map[String, ValidationConfig]) extends ValidationRecordConfig
 
-case object DefaultRecordConfig extends ValidationRecordConfig {
-  override def m: Map[String, ValidationConfig] = Map()
+class MapConfig(
+  m: Map[String, ValidationFieldConfig],
+  default: ValidationFieldConfig = DefaultFieldConfig
+) extends ValidationRecordConfig {
+  override def fieldConfig(name: String): ValidationFieldConfig = m.getOrElse(name, default)
 }
+
+case object DefaultRecordConfig extends MapConfig(Map())
 
 object ValidationRecordConfig {
-  def apply(s: (String, ValidationConfig)*): ValidationRecordConfig =
-    MapConfig(Map(s:_*))
+  def apply(s: (String, ValidationFieldConfig)*): ValidationRecordConfig = new MapConfig(Map(s:_*))
 }
 
+sealed trait ValidationFieldConfig extends ValidationConfig
 case object ThrowException extends ValidationFieldConfig
 case object NoCounter extends ValidationFieldConfig
 case object DefaultFieldConfig extends ValidationFieldConfig
