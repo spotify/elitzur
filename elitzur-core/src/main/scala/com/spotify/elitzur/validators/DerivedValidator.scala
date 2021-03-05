@@ -55,8 +55,7 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
             val v = p.typeclass.validateRecord(Unvalidated(deref))
             val validationType = p.typeclass.asInstanceOf[FieldValidator[_]].validationType
 
-            val c: ValidationFieldConfig = config.m
-              .getOrElse(name, DefaultFieldConfig).asInstanceOf[ValidationFieldConfig]
+            val c = config.fieldConfig(name)
             if (v.isValid) {
               if (c != NoCounter) {
                 reporter.reportValid(
@@ -64,8 +63,7 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
                   name,
                   validationType)
               }
-            }
-            else if (v.isInvalid) {
+            } else if (v.isInvalid) {
               if (c == ThrowException) {
                 throw new DataInvalidException(
                   s"Invalid value ${v.forceGet.toString} found for field $path${p.label}")
