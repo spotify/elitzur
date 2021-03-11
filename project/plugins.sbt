@@ -21,7 +21,7 @@ addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.0")
 addSbtPlugin("org.wartremover" % "sbt-wartremover" % "2.4.10")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.4")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.6")
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
 
 libraryDependencies ++= Seq(
