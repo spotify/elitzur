@@ -16,7 +16,7 @@
  */
 package com.spotify.elitzur.converters.avro
 
-import java.nio.ByteBuffer
+import java.nio.{Buffer, ByteBuffer}
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord, GenericRecordBuilder}
@@ -40,7 +40,9 @@ object AvroElitzurConversionUtils {
     // http://errorprone.info/bugpattern/ByteBufferBackingArray
     val bArray = new Array[Byte](bBuffer.remaining)
     bBuffer.get(bArray)
-    bBuffer.position(bBuffer.position() - bArray.length) // Restores position
+    // cast to Buffer to fix cross-compat issue described
+    // here: https://stackoverflow.com/questions/61267495
+    (bBuffer: Buffer).position((bBuffer: Buffer).position() - bArray.length) // Restores position
     bArray
   }
 
