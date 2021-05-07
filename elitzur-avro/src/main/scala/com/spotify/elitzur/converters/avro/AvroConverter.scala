@@ -274,19 +274,11 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
   extends AvroConverter[T] {
 
   override def fromAvro(v: Any, schema: Schema, doc: Option[String] = None): T = {
-    val ps = caseClass.parameters
-    val cs = new Array[Any](ps.length)
-    var i = 0
-
-    while (i < ps.length) {
-      val p = ps(i)
+    val cs = caseClass.parameters.map { p =>
       // Since our labels are camelCase in scala and snake_case in avro, we convert to snake to
       // retrieve the param ref
-      val fieldName = if (schema.getField(p.label) == null) {
-        SharedUtils.camelToSnake(p.label)
-      } else {
-        p.label
-      }
+      val fieldName = Option(schema.getField(p.label))
+        .map(_ => p.label).getOrElse(SharedUtils.camelToSnake(p.label))
 
       val field = schema.getField(fieldName)
       val innerSchema = field.schema()
@@ -301,74 +293,56 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
           }
         case _ => innerSchema
       }
-      cs.update(i,
-        p.typeclass.fromAvro(
-          v.asInstanceOf[GenericRecord].get(fieldName),
-          schemaParam,
-          doc
-        )
+      p.typeclass.fromAvro(
+        v.asInstanceOf[GenericRecord].get(fieldName),
+        schemaParam,
+        doc
       )
-      i += 1
     }
-    caseClass.rawConstruct(ArraySeq.unsafeWrapArray(cs))
+    caseClass.rawConstruct(cs)
   }
 
   override def toAvro(v: T, schema: Schema): Any = {
-    val ps = caseClass.parameters
-    var i = 0
     val builder = new GenericRecordBuilder(schema)
+    caseClass.parameters
+      .foreach { p =>
+        val deref = p.dereference(v)
+        val fieldName = Option(schema.getField(p.label))
+          .map(_ => p.label).getOrElse(SharedUtils.camelToSnake(p.label))
 
-    while (i < ps.length) {
-      val p = ps(i)
-      val deref = p.dereference(v)
-
-      val fieldName = if (schema.getField(p.label) == null) {
-        SharedUtils.camelToSnake(p.label)
-      } else {
-        p.label
+        builder.set(
+          fieldName,
+          p.typeclass.toAvro(deref, schema.getField(fieldName).schema()))
       }
-
-      builder.set(
-        fieldName,
-        p.typeclass.toAvro(deref, schema.getField(fieldName).schema()))
-      i += 1
-    }
     builder.build()
   }
 
   override def toAvroDefault(v: T, defaultGenericContainer: GenericContainer): Any = {
-    val ps = caseClass.parameters
-    var i = 0
     val builder = new GenericRecordBuilder(
       AvroElitzurConversionUtils
         .recordToGenericData(defaultGenericContainer.asInstanceOf[GenericRecord]))
 
-    while (i < ps.length) {
-      val p = ps(i)
-      val deref = p.dereference(v)
+    caseClass.parameters
+      .foreach { p =>
+        val deref = p.dereference(v)
+        val fieldName = Option(defaultGenericContainer.getSchema.getField(p.label))
+          .map(_ => p.label).getOrElse(SharedUtils.camelToSnake(p.label))
 
-      val fieldName = if (defaultGenericContainer.getSchema.getField(p.label) == null) {
-        SharedUtils.camelToSnake(p.label)
-      } else {
-        p.label
+        val field = defaultGenericContainer.getSchema.getField(fieldName)
+        val containerAsRecord = defaultGenericContainer.asInstanceOf[GenericRecord]
+
+        val fieldValue = if (AvroElitzurConversionUtils.isAvroRecordType(field.schema())) {
+          p.typeclass
+            .toAvroDefault(deref, containerAsRecord.get(fieldName).asInstanceOf[GenericRecord])
+        } else if (AvroElitzurConversionUtils.isAvroArrayType(field.schema())) {
+          p.typeclass
+            .toAvroDefault(deref, containerAsRecord.get(fieldName).asInstanceOf[GenericArray[_]])
+        } else {
+          p.typeclass.toAvroDefault(deref, defaultGenericContainer)
+        }
+
+        builder.set(fieldName, fieldValue)
       }
-
-      val field = defaultGenericContainer.getSchema.getField(fieldName)
-      val containerAsRecord = defaultGenericContainer.asInstanceOf[GenericRecord]
-
-      val fieldValue = if (AvroElitzurConversionUtils.isAvroRecordType(field.schema())) {
-        p.typeclass
-          .toAvroDefault(deref, containerAsRecord.get(fieldName).asInstanceOf[GenericRecord])
-      } else if (AvroElitzurConversionUtils.isAvroArrayType(field.schema())) {
-        p.typeclass
-          .toAvroDefault(deref, containerAsRecord.get(fieldName).asInstanceOf[GenericArray[_]])
-      } else {
-        p.typeclass.toAvroDefault(deref, defaultGenericContainer)
-      }
-
-      builder.set(fieldName, fieldValue)
-      i += 1
-    }
     builder.build()
   }
 }

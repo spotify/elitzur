@@ -211,16 +211,9 @@ object Validator extends Serializable {
   def combine[T](caseClass: CaseClass[Validator, T])
                 (implicit reporter: MetricsReporter, tag: ClassTag[T])
   : Validator[T] = {
-    val params = caseClass.parameters
-    var i = 0
-    var shouldValidate = false
-    while (i < params.length) {
-      val param = params(i)
-      if (param.typeclass.shouldValidate) {
-        shouldValidate = true
-      }
-      i = i + 1
-    }
+    val shouldValidate =
+      caseClass.parameters.exists(p => p.typeclass.shouldValidate)
+
     if (shouldValidate) DerivedValidator(caseClass) else new IgnoreValidator[T]
   }
 
