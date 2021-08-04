@@ -19,7 +19,7 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.10.0"
+val scioVersion = "0.10.4"
 val beamVersion = "2.28.0" // must stay in sync with scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
@@ -29,7 +29,7 @@ val jodaTimeVersion = "2.10.10"
 val magnoliaVersion = "0.17.0"
 val ratatoolVersion = "0.3.21"
 val scalaCheckVersion = "1.14.3"
-val enumeratumVersion = "1.5.15"
+val enumeratumVersion = "1.7.0"
 val scalaCollectionsCompatVersion = "2.4.3"
 
 
@@ -88,7 +88,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.14", "2.13.1"),
+  crossScalaVersions := Seq("2.12.10", "2.13.6"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
