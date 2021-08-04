@@ -30,10 +30,10 @@ import scala.collection.compat.immutable.ArraySeq
 object ElitzurMetrics {
 
   /** construct Beam counter from parts of counter name */
-  private[elitzur] def getCounter(className: String,
-                                  fieldName: String,
-                                  validationType: String,
-                                  state: CounterTypes.Value): Counter = {
+  def getCounter(className: String,
+                 fieldName: String,
+                 validationType: String,
+                 state: CounterTypes.Value): Counter = {
     val stateStr = state.toString
     val sb =
       new JStringBuilder(fieldName.length + 1 + validationType.length + 8 + stateStr.length)
