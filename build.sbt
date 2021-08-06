@@ -57,7 +57,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   releaseSettings ++ Seq(
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
-  scalaVersion          := "2.12.10",
+  scalaVersion          := "2.12.14",
   scalacOptions         ++= Seq(
     "-target:jvm-1.8",
     "-deprecation",
@@ -88,7 +88,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.10", "2.13.6"),
+  crossScalaVersions := Seq("2.12.14", "2.13.6"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
