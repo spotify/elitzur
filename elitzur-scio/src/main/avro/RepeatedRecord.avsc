@@ -35,6 +35,30 @@
           "doc": "repeated string field"
         }
       }
+    },
+    {
+      "name": "optional_repeated_record",
+      "type": ["null", {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "RepeatedInnerOptionalRecord",
+          "doc": "repeated record field",
+          "fields": [
+            {
+              "name": "string_field",
+              "type": "string",
+              "doc": "inner string field"
+            },
+            {
+              "name": "long_field",
+              "type": "long",
+              "doc": "inner long field"
+            }
+          ]
+        }
+      }],
+      "default": null
     }
   ]
 }

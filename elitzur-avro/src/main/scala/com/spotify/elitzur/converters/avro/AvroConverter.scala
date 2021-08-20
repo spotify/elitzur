@@ -297,6 +297,7 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
           val candidateSchema = innerSchema.getTypes.asScala.find(_.getType != Schema.Type.NULL)
           candidateSchema.map(_.getType) match {
             case Some(Schema.Type.RECORD) => candidateSchema.get
+            case Some(Schema.Type.ARRAY) => candidateSchema.get
             case _ => innerSchema
           }
         case _ => innerSchema

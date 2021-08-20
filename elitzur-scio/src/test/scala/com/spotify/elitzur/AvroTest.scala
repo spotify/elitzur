@@ -79,7 +79,8 @@ object AvroTestCaseClasses {
   case class RepeatedInnerRecordCC(stringField: CountryCodeTesting,
                                    longField: NonNegativeLongTesting)
   case class RepeatedRecordCC(repeatedRecord: Seq[RepeatedInnerRecordCC],
-                              repeatedField: List[CountryCodeTesting])
+                              repeatedField: List[CountryCodeTesting],
+                              optionalRepeatedRecord: Option[List[RepeatedInnerRecordCC]])
   case class PartialRepeated(repeatedField: List[CountryCodeTesting])
   case class WithEnumField(enumTest: TestEnum)
 
@@ -152,7 +153,9 @@ class AvroTest extends PipelineSpec {
         nnl2 <- Gen.chooseNum(0, 150).map(NonNegativeLongTesting(_))
       } yield RepeatedRecordCC(
         Seq(RepeatedInnerRecordCC(cc, nnl), RepeatedInnerRecordCC(cc2, nnl2)),
-        List(cc, cc2))
+        List(cc, cc2),
+        Some(List(RepeatedInnerRecordCC(cc, nnl),  RepeatedInnerRecordCC(cc2, nnl2)))
+      )
     ).sample.get
 
     runWithContext { sc =>
