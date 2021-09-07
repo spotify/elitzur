@@ -19,14 +19,14 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.10.4"
-val beamVersion = "2.32.0" // must stay in sync with scio
+val scioVersion = "0.11.0"
+val beamVersion = "2.28.0" // must stay in sync with scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.10"
-val magnoliaVersion = "0.17.0"
+val magnoliaVersion = "1.0.0-M4"
 val ratatoolVersion = "0.3.21"
 val scalaCheckVersion = "1.14.3"
 val enumeratumVersion = "1.7.0"
@@ -73,7 +73,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
       Seq()
     }
   },
-  javacOptions          ++= Seq("-source", "1.8",
+  javacOptions ++= Seq("-source", "1.8",
     "-target", "1.8"),
 
   // Repositories and dependencies
@@ -97,7 +97,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
     "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
     "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion % "test",
     "joda-time" % "joda-time" % jodaTimeVersion,
-    "com.propensive" %% "magnolia" % magnoliaVersion,
+    "com.softwaremill.magnolia" %% "magnolia-core" % magnoliaVersion,
     "com.beachape" %% "enumeratum" % enumeratumVersion,
     "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatVersion,
   ),
@@ -113,10 +113,12 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   // Avro files are compiled to src_managed/main/compiled_avro
   // Exclude their parent to avoid confusing IntelliJ
-  sourceDirectories in Compile := (sourceDirectories in Compile).value.filterNot(_.getPath.endsWith("/src_managed/main")),
-  managedSourceDirectories in Compile := (managedSourceDirectories in Compile).value.filterNot(_.getPath.endsWith("/src_managed/main")),
-  sources in doc in Compile := List(),  // suppress warnings
-  wartremoverErrors in Compile ++= Warts.unsafe.filterNot(disableWarts.contains),
+  Compile / sourceDirectories := (Compile / sourceDirectories)
+    .value.filterNot(_.getPath.endsWith("/src_managed/main")),
+  Compile / managedSourceDirectories := (Compile / managedSourceDirectories)
+    .value.filterNot(_.getPath.endsWith("/src_managed/main")),
+  Compile / doc / sources := List(),  // suppress warnings
+  Compile / wartremoverErrors ++= Warts.unsafe.filterNot(disableWarts.contains),
   compileOrder := CompileOrder.JavaThenScala
 )
 
@@ -220,12 +222,12 @@ lazy val benchmarking: Project = Project(
   JmhPlugin
 ).settings(
   commonSettings ++ noPublishSettings,
-  version in AvroConfig := avroVersion,
+  AvroConfig / version := avroVersion,
   name := "benchmarking",
   libraryDependencies ++= Seq(
     "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion,
   ),
-  initialize in Test ~= { _ =>
+  Test / initialize ~= { _ =>
     // setting this to our mock provider so the tests pass
     System.setProperty("override.type.provider",
       "com.spotify.elitzur.example.ElitzurOverrideTypeProviderTestingImpl")
@@ -242,7 +244,7 @@ lazy val elitzurSchemas: Project = Project(
   file("elitzur-schemas")
 ).settings(
   commonSettings ++ noPublishSettings,
-  version in AvroConfig := avroVersion,
+  AvroConfig / version := avroVersion,
   name := "elitzur-schemas"
 )
 
