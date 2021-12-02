@@ -153,7 +153,7 @@ lazy val releaseSettings = Seq(
     Developer(id="anne-decusatis", name="Anne DeCusatis", email="anned@spotify.com", url=url("https://twitter.com/precisememory")),
     Developer(id="catherinejelder", name="Catherine Elder", email="siege@spotify.com", url=url("https://twitter.com/siegeelder")),
     Developer(id="idreeskhan", name="Idrees Khan", email="me@idrees.xyz", url=url("https://twitter.com/idreesxkhan")),
-    Developer(id="jackdingilian", name="Jack Dingilian", email="jackd@spotify.com", url=url("")),
+//    Developer(id="jackdingilian", name="Jack Dingilian", email="jackd@spotify.com", url=url("")),
     // TODO add the rest of the team
   )
 )
