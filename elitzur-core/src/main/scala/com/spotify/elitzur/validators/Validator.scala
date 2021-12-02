@@ -16,7 +16,9 @@
  */
 package com.spotify.elitzur.validators
 
-import com.spotify.elitzur.{IllegalValidationException, MetricsReporter}
+import java.lang.{StringBuilder => JStringBuilder}
+
+import com.spotify.elitzur.{DataInvalidException, IllegalValidationException, MetricsReporter}
 import magnolia._
 
 import scala.collection.mutable
@@ -24,6 +26,7 @@ import scala.language.experimental.macros
 import scala.reflect.{ClassTag, _}
 import scala.util.Try
 import scala.collection.compat._
+import scala.collection.compat.immutable.ArraySeq
 
 trait Validator[A] extends Serializable {
   def validateRecord(a: PreValidation[A],
@@ -243,6 +246,96 @@ object Validator extends Serializable {
 
     override def shouldValidate: Boolean = true
   }
+
+  //TODO: fix scalastyle
+  //scalastyle:off
+  /**
+   * Core validation loop for both dynamic and derived validators
+   * This code is deliberately mutable, uses casts to avoid unboxing, and avoids dereferencing
+   * Ignore Validators in order to optimize speed at runtime
+   */
+  @SuppressWarnings(Array("org.wartremover.warts.Var"))
+  def validationLoop[T](validatorAccessors: Array[ValidatorAccessor[Any]],
+                     constructor: Seq[Any] => T,
+                     outermostClassName: String,
+                     path: String = "",
+                     config: ValidationRecordConfig = DefaultRecordConfig)
+                    (implicit reporter: MetricsReporter): PostValidation[T] = {
+    val cs = new Array[Any](validatorAccessors.length)
+    var i = 0
+    var atLeastOneValid = false
+    var atLeastOneInvalid = false
+    val counterClassName = outermostClassName
+
+    while (i < validatorAccessors.length) {
+      val accessor = validatorAccessors(i)
+      val v =
+        if (!accessor.validator.isInstanceOf[IgnoreValidator[_]]) {
+          val name = new JStringBuilder(path.length + accessor.label.length)
+            .append(path).append(accessor.label).toString
+          val o = if (accessor.validator.isInstanceOf[FieldValidator[_]]) {
+            val v = accessor.validator.validateRecord(Unvalidated(accessor.value))
+            val validationType = accessor.validator.asInstanceOf[FieldValidator[_]].validationType
+
+            val c = config.fieldConfig(name)
+            if (v.isValid) {
+              if (c != NoCounter) {
+                reporter.reportValid(
+                  counterClassName,
+                  name,
+                  validationType
+                )
+              }
+            } else if (v.isInvalid) {
+              if (c == ThrowException) {
+                throw new DataInvalidException(
+                  s"Invalid value ${v.forceGet.toString} found for field $path${accessor.label}")
+              }
+              if (c != NoCounter) {
+                reporter.reportInvalid(
+                  counterClassName,
+                  name,
+                  validationType
+                )
+              }
+            }
+            v
+          } else {
+            accessor.validator.validateRecord(
+              Unvalidated(accessor.value),
+              new JStringBuilder(path.length + accessor.label.length + 1)
+                .append(path).append(accessor.label).append(".").toString,
+              Some(counterClassName),
+              config
+            )
+          }
+
+          if (o.isValid) {
+            atLeastOneValid = true
+          } else if (o.isInvalid) {
+            atLeastOneInvalid = true
+          }
+
+          o.forceGet
+        } else {
+          accessor.value
+        }
+      cs.update(i, v)
+      i = i + 1
+    }
+    val record = constructor(ArraySeq.unsafeWrapArray(cs))
+
+    if (atLeastOneInvalid){
+      Invalid(record)
+    }
+    else if (atLeastOneValid) {
+      Valid(record)
+    }
+    else {
+      IgnoreValidation(record)
+    }
+  }
+  //scalastyle:on
 
   def fallback[T]: Validator[T] = macro ValidatorMacros.issueFallbackWarning[T]
 
