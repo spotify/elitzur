@@ -247,8 +247,7 @@ object Validator extends Serializable {
     override def shouldValidate: Boolean = true
   }
 
-  //TODO: fix scalastyle
-  //scalastyle:off
+  //scalastyle:off method.length cyclomatic.complexity
   /**
    * Core validation loop for both dynamic and derived validators
    * This code is deliberately mutable, uses casts to avoid unboxing, and avoids dereferencing
@@ -335,7 +334,7 @@ object Validator extends Serializable {
       IgnoreValidation(record)
     }
   }
-  //scalastyle:on
+  //scalastyle:on method.length cyclomatic.complexity
 
   def fallback[T]: Validator[T] = macro ValidatorMacros.issueFallbackWarning[T]
 

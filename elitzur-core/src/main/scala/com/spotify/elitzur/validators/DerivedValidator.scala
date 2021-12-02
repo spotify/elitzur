@@ -33,6 +33,7 @@ final private[elitzur] case class DerivedValidator[T] private(caseClass: CaseCla
     val as = new Array[ValidatorAccessor[Any]](ps.length)
     var i = 0
 
+    // Loop through parameters once to dereference and avoid leaking magnolia types in APIs
     while (i < ps.length) {
       val p = ps(i)
       val deref = p.dereference(a.forceGet)
