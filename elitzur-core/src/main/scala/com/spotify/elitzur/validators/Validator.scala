@@ -264,7 +264,6 @@ object Validator extends Serializable {
     var i = 0
     var atLeastOneValid = false
     var atLeastOneInvalid = false
-    val counterClassName = outermostClassName
 
     while (i < validatorAccessors.length) {
       val accessor = validatorAccessors(i)
@@ -280,7 +279,7 @@ object Validator extends Serializable {
             if (v.isValid) {
               if (c != NoCounter) {
                 reporter.reportValid(
-                  counterClassName,
+                  outermostClassName,
                   name,
                   validationType
                 )
@@ -292,7 +291,7 @@ object Validator extends Serializable {
               }
               if (c != NoCounter) {
                 reporter.reportInvalid(
-                  counterClassName,
+                  outermostClassName,
                   name,
                   validationType
                 )
@@ -304,7 +303,7 @@ object Validator extends Serializable {
               Unvalidated(accessor.value),
               new JStringBuilder(path.length + accessor.label.length + 1)
                 .append(path).append(accessor.label).append(".").toString,
-              Some(counterClassName),
+              Some(outermostClassName),
               config
             )
           }
