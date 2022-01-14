@@ -177,6 +177,8 @@ class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Bu
   }
 
   override def shouldValidate: Boolean = implicitly[Validator[T]].shouldValidate
+  def innerValidationType: String =
+    implicitly[Validator[T]].asInstanceOf[FieldValidator[_]].validationType
 
 }
 
@@ -271,35 +273,20 @@ object Validator extends Serializable {
         if (!accessor.validator.isInstanceOf[IgnoreValidator[_]]) {
           val name = new JStringBuilder(path.length + accessor.label.length)
             .append(path).append(accessor.label).toString
-          val o = if (accessor.validator.isInstanceOf[FieldValidator[_]]) {
-            val v = accessor.validator.validateRecord(Unvalidated(accessor.value))
-            val validationType = accessor.validator.asInstanceOf[FieldValidator[_]].validationType
+          val c = config.fieldConfig(name)
+          var o: PostValidation[Any] = null
+          var innerValidationType: String = null
 
-            val c = config.fieldConfig(name)
-            if (v.isValid) {
-              if (c != NoCounter) {
-                reporter.reportValid(
-                  outermostClassName,
-                  name,
-                  validationType
-                )
-              }
-            } else if (v.isInvalid) {
-              if (c == ThrowException) {
-                throw new DataInvalidException(
-                  s"Invalid value ${v.forceGet.toString} found for field $path${accessor.label}")
-              }
-              if (c != NoCounter) {
-                reporter.reportInvalid(
-                  outermostClassName,
-                  name,
-                  validationType
-                )
-              }
-            }
-            v
+          if (accessor.validator.isInstanceOf[FieldValidator[_]]) {
+            o = accessor.validator.validateRecord(Unvalidated(accessor.value))
+            innerValidationType = accessor.validator.asInstanceOf[FieldValidator[_]].validationType
           } else {
-            accessor.validator.validateRecord(
+            if (accessor.validator.isInstanceOf[SeqLikeValidator[_, Seq]]) {
+              innerValidationType =
+                accessor.validator.asInstanceOf[SeqLikeValidator[_, Seq]].innerValidationType
+            }
+
+            o = accessor.validator.validateRecord(
               Unvalidated(accessor.value),
               new JStringBuilder(path.length + accessor.label.length + 1)
                 .append(path).append(accessor.label).append(".").toString,
@@ -308,10 +295,32 @@ object Validator extends Serializable {
             )
           }
 
+          // o and v should be set by now
+          // Also do not register a counter if validationType is empty
           if (o.isValid) {
+            // NOTE: This will only work for FieldValidator, SeqLikeValidator,
+            // and nested case classes too.
+            if (c != NoCounter && innerValidationType != null) {
+              reporter.reportValid(
+                outermostClassName,
+                name,
+                innerValidationType
+              )
+            }
             atLeastOneValid = true
           } else if (o.isInvalid) {
             atLeastOneInvalid = true
+            if (c == ThrowException) {
+              throw new DataInvalidException(
+                s"Invalid value ${o.forceGet.toString} found for field $path${accessor.label}")
+            }
+            if (c != NoCounter && innerValidationType != null) {
+              reporter.reportInvalid(
+                outermostClassName,
+                name,
+                innerValidationType
+              )
+            }
           }
 
           o.forceGet

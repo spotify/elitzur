@@ -17,10 +17,8 @@
 package com.spotify.elitzur
 
 import java.util.Locale
-
-import com.spotify.elitzur.example._
-import com.spotify.elitzur.validators._
 import com.spotify.elitzur.scio._
+import com.spotify.scio.{ContextAndArgs, ScioMetrics}
 import com.spotify.scio.testing.PipelineSpec
 import org.scalacheck.{Arbitrary, Gen}
 
@@ -30,9 +28,60 @@ object TestClasses {
   case class Test(inner: Inner, countryCode: CountryCodeTesting)
   case class Inner(playCount: NonNegativeLongTesting)
   case class DynamicRecord(i: DynamicString, j: NonNegativeLongTesting)
+
+  case class ListTest(t: List[CountryCodeTesting], a: List[String])
+  case class VectorTest(t: Vector[CountryCodeTesting])
+  case class SeqTest(t: Seq[CountryCodeTesting])
+  case class ArrayTest(t: Array[CountryCodeTesting])
+  // Test for nested Record too
+  case class NestedRecordSequence(nested: ListTest)
+}
+
+
+object PipelineInput {
+  import TestClasses._
+
+  val validListInput =
+    List(ListTest(List(CountryCodeTesting("US"), CountryCodeTesting("MX")), List("A", "B")))
+
+  val validVectorInput =
+    List(VectorTest(Vector(CountryCodeTesting("US"), CountryCodeTesting("MX"))))
+
+  val invalidSeqInput = List(
+    SeqTest(
+      // Contains a valid country code but should still return invalid since
+      // some of the values are invalid
+      Seq(CountryCodeTesting("US"), CountryCodeTesting("sdfsdfd"), CountryCodeTesting("sdfsd"))
+    )
+  )
+
+  val invalidArrayInput =
+    List(ArrayTest(Array(CountryCodeTesting("12"), CountryCodeTesting("2121X"))))
+
+  val nestedRecordValidInput =
+    List(
+      NestedRecordSequence(
+        ListTest(validListInput.headOption.get.t, validListInput.headOption.get.a))
+    )
+}
+
+object DummyPipeline {
+  import PipelineInput._
+
+  def main(args: Array[String]): Unit = {
+    val (sc, _) = ContextAndArgs(args)
+    sc.parallelize(validListInput).validate()
+    sc.parallelize(invalidSeqInput).validate()
+    sc.parallelize(invalidArrayInput).validate()
+    sc.parallelize(validVectorInput).validate()
+    sc.parallelize(nestedRecordValidInput).validate()
+
+    sc.run().waitUntilDone()
+  }
 }
 
 class ValidatorDoFnTest extends PipelineSpec {
+
 
   "Validator SCollection helper" should "validate valid records" in {
     val validRecord = TestClasses.Test(TestClasses.Inner(NonNegativeLongTesting(0)),
@@ -79,5 +128,42 @@ class ValidatorDoFnTest extends PipelineSpec {
       sc.validateWithResult().flatten
         .count
     }) shouldBe Seq(1)
+  }
+
+  "Validator SCollection" should "validate collection of Seq,Vector,List or Array " +
+    "and set counters" in {
+    JobTest[DummyPipeline.type ]
+      .counters(_.size shouldBe 5)
+      .counter(
+        ScioMetrics.counter(
+          "com.spotify.elitzur.TestClasses.SeqTest",
+          "t/CountryCodeTesting/ElitzurInvalid"
+        )
+      )(_ shouldBe 1)
+      .counter(
+        ScioMetrics.counter(
+          "com.spotify.elitzur.TestClasses.ListTest",
+          "t/CountryCodeTesting/ElitzurValid"
+        )
+      )(_ shouldBe 1)
+      .counter(
+        ScioMetrics.counter(
+          "com.spotify.elitzur.TestClasses.ArrayTest",
+          "t/CountryCodeTesting/ElitzurInvalid"
+        )
+      )(_ shouldBe 1)
+      .counter(
+        ScioMetrics.counter(
+          "com.spotify.elitzur.TestClasses.VectorTest",
+          "t/CountryCodeTesting/ElitzurValid"
+        )
+      )(_ shouldBe 1)
+      .counter(
+        ScioMetrics.counter(
+          "com.spotify.elitzur.TestClasses.NestedRecordSequence",
+          "nested.t/CountryCodeTesting/ElitzurValid"
+        )
+      )(_ shouldBe 1)
+      .run()
   }
 }
