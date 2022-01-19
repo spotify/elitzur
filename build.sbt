@@ -80,7 +80,8 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   resolvers ++= Seq(
     Resolver.sonatypeRepo("public"),
     "Local Maven Repository" at "file://" + Path.userHome.absolutePath + "/.m2/repository",
-    "Local Ivy Repository" at "file://" + Path.userHome.absolutePath + "/.ivy2/local"
+    "Local Ivy Repository" at "file://" + Path.userHome.absolutePath + "/.ivy2/local",
+    "Confluent's Maven Public Repository" at "https://packages.confluent.io/maven/"
   ),
 
   // protobuf-lite is an older subset of protobuf-java and causes issues
