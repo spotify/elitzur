@@ -1,0 +1,46 @@
+{
+  "name": "TestAvroArrayTypes",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name": "userAge",
+      "type": "long",
+      "doc": "{validationType: age}"
+    },
+    {
+      "name": "userFloat",
+      "type": "float",
+      "doc": "floating away on the clouds of google"
+    },
+    {
+      "name": "userLong",
+      "type": "long",
+      "doc": "{validationType: nonNegativeLong}"
+    },
+    {
+      "name": "innerOpt",
+      "type": "com.spotify.elitzur.schemas.InnerNestedType",
+      "default": null
+    },
+    {
+      "name": "innerOptNull",
+      "type": ["null", "com.spotify.elitzur.schemas.InnerNestedType"],
+      "default": null
+    },
+    {
+      "name":"arrayLongs",
+      "type":{
+        "type": "array",
+        "items": "long"
+      }
+    },
+    {
+      "name":"arrayInnerNested",
+      "type":{
+        "type": "array",
+        "items": "com.spotify.elitzur.schemas.InnerNestedWithArrayFieldType"
+      }
+    }
+  ]
+}

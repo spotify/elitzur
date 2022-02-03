@@ -1,0 +1,14 @@
+{
+  "name": "InnerNestedArrayType",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name":"arrayInnerNested",
+      "type":{
+        "type": "array",
+        "items": "com.spotify.elitzur.schemas.InnerNestedType"
+      }
+    }
+  ]
+}
