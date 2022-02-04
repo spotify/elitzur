@@ -120,33 +120,40 @@ class DynamicRecordValidatorTest extends AnyFlatSpec with Matchers {
   it should "pass new parser" in {
 //    val res1 = AvroFieldExtractor.getAvroValue("innerOpt.userId", testAvroTypeR)
 //    res1
-    val res2 = AvroFieldExtractor.getAvroValue(
-      "arrayInnerNested.innerNested.arrayInnerNested.countryCode", testAvroTypeR)
-    res2
-//    val res3 = AvroFieldExtractor.getAvroValue("innerOptNull.userId", testAvroTypeR) // not handled
+//    val res2 = AvroFieldExtractor.getAvroValue(
+//      "arrayInnerNested.innerNested.arrayInnerNested.countryCode", testAvroTypeR)
+//    res2
+
+    val res3 = AvroFieldExtractor.getAvroValue("innerOptNull.userId", testAvroTypeR) // not handled
+    res3
+
+//    val res4 = AvroFieldExtractor.getAvroValue("arrayLongs", testAvroTypeR)
+//    res4
+
+
   }
 
-  it should "process beginning to end" in {
-    val avroFieldWithValidation: Array[String] = Array(
-      "innerOpt.playCount:NonNegativeLong",
-      "innerOpt.userId:CountryCode"
-    )
-
-    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
-    val qaasValidationCompanionMap: Map[String, QaasValidationCompanion] =
-      QaasValidationCompanionProviderTest.getQaasValidationCompanion
-
-    val tester = new QaasAvroRecordValidator(avroFieldWithValidation, qaasValidationCompanionMap)
-
-    tester.validateRecord(testAvroTypeR)
-
-    val thisMetricType = tester.validationInputs.headOption.get
-
-    metricsReporter.asInstanceOf[DynamicRecordValidatorTest.TestMetricsReporter].getValid(
-      tester.className,
-      thisMetricType.label,
-      thisMetricType.qaasValidationCompanion.validatorIdentifier
-    ) shouldEqual 1
-  }
+//  it should "process beginning to end" in {
+//    val avroFieldWithValidation: Array[String] = Array(
+//      "innerOpt.playCount:NonNegativeLong",
+//      "innerOpt.userId:CountryCode"
+//    )
+//
+//    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
+//    val qaasValidationCompanionMap: Map[String, QaasValidationCompanion] =
+//      QaasValidationCompanionProviderTest.getQaasValidationCompanion
+//
+//    val tester = new QaasAvroRecordValidator(avroFieldWithValidation, qaasValidationCompanionMap)
+//
+//    tester.validateRecord(testAvroTypeR)
+//
+//    val thisMetricType = tester.validationInputs.headOption.get
+//
+//    metricsReporter.asInstanceOf[DynamicRecordValidatorTest.TestMetricsReporter].getValid(
+//      tester.className,
+//      thisMetricType.label,
+//      thisMetricType.qaasValidationCompanion.validatorIdentifier
+//    ) shouldEqual 1
+//  }
 
 }

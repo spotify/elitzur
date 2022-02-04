@@ -25,10 +25,6 @@ import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
-case class AvroConverterValidator(fieldValidationInput: String) {
-  def getFieldValue(avroRecord: GenericRecord, field: String): Object = avroRecord.get(field)
-}
-
 object AvroFieldExtractor {
   private val hasLeafPath: Regex = """^([^.]*)\.(.*)""".r
   private val isLeaf: Regex = """^([^.]*)$""".r
@@ -38,7 +34,7 @@ object AvroFieldExtractor {
       Schema.Type.BYTES, Schema.Type.FLOAT, Schema.Type.INT)
 
   private def evalArrayAccessor(
-    field: String, rest: String, avroObject: Object, avroSchema: Schema
+    field: String, rest: String, avroObject: Object
   ): Object= {
     val resList = new java.util.ArrayList[Object]
     val innerObjList = avroObject.asInstanceOf[java.util.ArrayList[GenericRecord]]
@@ -69,7 +65,7 @@ object AvroFieldExtractor {
             val innerSchema = avroSchema.getField(field).schema()
             recursiveFieldAccessor(rest, innerObject, innerSchema)
           case Schema.Type.ARRAY =>
-            evalArrayAccessor(field, rest, avroObject, avroSchema)
+            evalArrayAccessor(field, rest, avroObject)
           case schema if PRIMITIVES.contains(schema) =>
             throw new Exception("should not happen")
           case _ =>
@@ -78,32 +74,26 @@ object AvroFieldExtractor {
         }
       case isLeaf(field) =>
         avroSchema.getType match {
-          case schema if PRIMITIVES.contains(schema) => avroObject
           case Schema.Type.RECORD => avroObject.asInstanceOf[GenericRecord].get(field)
+          // This assumes that what can be within an array is only generics. need to handle the
+          // case where the inside is non-primitive or generics (e.g. maps and arrays)
           case Schema.Type.ARRAY =>
             val resList = new util.ArrayList[Object]
             val avroObjList = avroObject.asInstanceOf[java.util.ArrayList[_]]
             avroObjList.forEach(x => resList.add(x.asInstanceOf[GenericRecord].get(field)))
             resList
+          case schema if PRIMITIVES.contains(schema) =>
+            throw new Exception("should not happen")
+          case _ =>
+            // Still need to implement Union/Map/ENUM Not sure about FIXED
+            throw new Exception("oops not handled")
         }
     }
   }
   // scalastyle:off cyclomatic.complexity
 
-  def recursiveFieldAccessor(aCV: AvroConverterValidator, avroRecord: GenericRecord): Object = {
-    val (initField, initPath) = aCV.fieldValidationInput match {
-      case hasLeafPath(field, rest) => (field, rest)}
-    val initSchema = avroRecord.getSchema.getField(initField).schema
-    val initAvroObj = avroRecord.get(initField)
-    recursiveFieldAccessor(initPath, initAvroObj, initSchema)
-  }
-
-  def getAvroValue(
-    fieldValidationInput: String, avroRecord: GenericRecord
-  ): Object = {
-    val avroConverterValidator = new AvroConverterValidator(fieldValidationInput)
-
-    recursiveFieldAccessor(avroConverterValidator, avroRecord)
+  def getAvroValue(fieldValidationInput: String, avroRecord: GenericRecord): Object = {
+    recursiveFieldAccessor(fieldValidationInput, avroRecord, avroRecord.getSchema)
   }
 
 }
