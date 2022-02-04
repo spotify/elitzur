@@ -90,29 +90,23 @@ class DynamicRecordValidatorTest extends AnyFlatSpec with Matchers {
     ) shouldEqual 1
   }
 
-//  it should "validate a repeated value" in {
-//    val label = "label"
-//    val className = "com.spotify.DynamicClass"
-//    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
-//    val repeatedValidator = implicitly[Validator[Seq[NonNegativeLong]]]
-//    val recordValidator = DynamicRecordValidator(
-//      Array(repeatedValidator).asInstanceOf[Array[Validator[Any]]], Array(label))
-//    recordValidator.validateRecord(
-//      Unvalidated(Seq(Seq(NonNegativeLong(1L), NonNegativeLong(-1L))).asInstanceOf[Seq[Any]]),
-//      outermostClassName = Some(className)
-//    )
-//    print(metricsReporter.toString)
-//    metricsReporter.asInstanceOf[TestMetricsReporter].getValid(
-//      className,
-//      label,
-//      NonNegativeLongCompanion.validationType
-//    ) shouldEqual 1
-//    metricsReporter.asInstanceOf[TestMetricsReporter].getInvalid(
-//      className,
-//      label,
-//      NonNegativeLongCompanion.validationType
-//    ) shouldEqual 1
-//  }
+  it should "validate a repeated value" in {
+    val label = "label"
+    val className = "com.spotify.DynamicClass"
+    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
+    val repeatedValidator = implicitly[Validator[Seq[NonNegativeLong]]]
+    val recordValidator = DynamicRecordValidator(
+      Array(repeatedValidator).asInstanceOf[Array[Validator[Any]]], Array(label))
+    recordValidator.validateRecord(
+      Unvalidated(Seq(Seq(NonNegativeLong(1L), NonNegativeLong(-1L))).asInstanceOf[Seq[Any]]),
+      outermostClassName = Some(className)
+    )
+    metricsReporter.asInstanceOf[TestMetricsReporter].getInvalid(
+      className,
+      label,
+      NonNegativeLongCompanion.validationType
+    ) shouldEqual 1
+  }
 
   it should "validate multiple fields" in {
     val label1 = "label1"
