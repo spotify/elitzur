@@ -27,8 +27,6 @@ import com.spotify.elitzur.validators.Validator
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.util
-
 object DynamicRecordValidatorTest {
   class TestMetricsReporter extends MetricsReporter {
     val map : scala.collection.mutable.Map[String, Int] =
@@ -52,22 +50,22 @@ object QaasValidationCompanionProviderTest {
   // Expected to be made by jinja
   def getQaasValidationCompanion: Map[String, QaasValidationCompanion] = {
     Map[String, QaasValidationCompanion](
-      NonNegativeLongCompanion.validationType.toUpperCase -> QaasValidationCompanion(
-        implicitly[Validator[NonNegativeLong]],
-        NonNegativeLongCompanion.parseAvroObj,
-        NonNegativeLongCompanion.validationType
-      ),
-      NonNegativeDoubleCompanion.validationType.toUpperCase -> QaasValidationCompanion(
-        implicitly[Validator[NonNegativeDouble]],
-        NonNegativeDoubleCompanion.parseAvroObj,
-        NonNegativeDoubleCompanion.validationType
-      ),
-      CountryCompanion.validationType.toUpperCase -> QaasValidationCompanion(
-        implicitly[Validator[CountryCode]],
-        CountryCompanion.parseAvroObj,
-        CountryCompanion.validationType
+      NonNegativeLongCompanion.validationType.toUpperCase ->
+        new QaasValidationCompanion(NonNegativeLongCompanion.validationType) {
+          override val validator: Validator[_] = implicitly[Validator[NonNegativeLong]]
+          override def validatorCheckParser: Object => Any = NonNegativeLongCompanion.parseAvroObj
+        },
+      NonNegativeDoubleCompanion.validationType.toUpperCase ->
+        new QaasValidationCompanion(NonNegativeDoubleCompanion.validationType) {
+          override val validator: Validator[_] = implicitly[Validator[NonNegativeDouble]]
+          override def validatorCheckParser: Object => Any = NonNegativeDoubleCompanion.parseAvroObj
+        },
+      CountryCompanion.validationType.toUpperCase ->
+        new QaasValidationCompanion(CountryCompanion.validationType) {
+          override val validator: Validator[_] = implicitly[Validator[CountryCode]]
+          override def validatorCheckParser: Object => Any = CountryCompanion.parseAvroObj
+        }
       )
-    )
   }
 }
 

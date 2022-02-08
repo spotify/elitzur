@@ -29,10 +29,10 @@ import scala.util.matching.Regex
 
 // TODO: please rename this class
 object AvroFieldExtractor {
-  private val hasNextLeaf: Regex = """^([^.\[\]]*)\.(.*)""".r
-  private val isLeafNode: Regex = """^([^.\[\]]*)$""".r
-  private val hasNextLeafArray: Regex = """^([^.]*)\[\]\.(.*)""".r
-  private val isLeafNodeArray: Regex = """^([^.]*)\[\]$""".r
+  private val hasNextLeaf: Regex = """^([a-zA-Z0-9]*)\.(.*)""".r
+  private val isLeafNode: Regex = """^([a-zA-Z0-9]*)$""".r
+  private val hasNextLeafArray: Regex = """^([a-zA-Z0-9]*)\[\]\.(.*)""".r
+  private val isLeafNodeArray: Regex = """^([a-zA-Z0-9]*)\[\]$""".r
 
   private val PRIMITIVES: Set[Schema.Type] =
     Set(Schema.Type.STRING, Schema.Type.LONG, Schema.Type.DOUBLE, Schema.Type.BOOLEAN,

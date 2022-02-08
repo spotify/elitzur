@@ -64,7 +64,10 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
 //    }
 //    caughtCase1.getMessage should be ("[] is required for an array schema")
 
-    // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
+    // Input: {"innerArrayRoot": [
+    //    {"innerArrayInsideRecord": "deepNestedRecord": {"recordId": -1}}"},
+    //    {"innerArrayInsideRecord": "deepNestedRecord": {"recordId": -5}}"}
+    //    ]}
     // Output: Exception
 
     val caughtCase2 = intercept[InvalidAvroFieldOperationException] {
