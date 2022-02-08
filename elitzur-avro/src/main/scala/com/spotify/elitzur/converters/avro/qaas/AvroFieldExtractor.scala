@@ -17,80 +17,166 @@
 
 package com.spotify.elitzur.converters.avro.qaas
 
+import com.spotify.elitzur.converters.avro.qaas.AvroFieldExtractorExceptions.InvalidAvroFieldOperationException
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 
 import java.util
 import scala.annotation.tailrec
+import scala.collection.convert.Wrappers
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
+// TODO: please rename this class
 object AvroFieldExtractor {
-  private val hasLeafPath: Regex = """^([^.]*)\.(.*)""".r
-  private val isLeaf: Regex = """^([^.]*)$""".r
+  private val hasNextLeaf: Regex = """^([^.\[\]]*)\.(.*)""".r
+  private val isLeafNode: Regex = """^([^.\[\]]*)$""".r
+  private val hasNextLeafArray: Regex = """^([^.]*)\[\]\.(.*)""".r
+  private val isLeafNodeArray: Regex = """^([^.]*)\[\]$""".r
 
   private val PRIMITIVES: Set[Schema.Type] =
     Set(Schema.Type.STRING, Schema.Type.LONG, Schema.Type.DOUBLE, Schema.Type.BOOLEAN,
       Schema.Type.BYTES, Schema.Type.FLOAT, Schema.Type.INT)
 
   private def evalArrayAccessor(
-    field: String, rest: String, avroObject: Object
-  ): Object= {
-    val resList = new java.util.ArrayList[Object]
-    val innerObjList = avroObject.asInstanceOf[java.util.ArrayList[GenericRecord]]
-     innerObjList.forEach(
-       obj => {
-         val elemAvroObj = obj.get(field)
-         val elemAvroSchema = obj.getSchema.getField(field).schema()
-         val childElemAvroObj = recursiveFieldAccessor(rest, elemAvroObj, elemAvroSchema)
-         childElemAvroObj match {
-           case l: java.util.List[Object] => l.forEach(x => resList.add(x))
-           case _ => resList.add(childElemAvroObj)
-         }
-       }
-     )
+    field: String, rest: String, avroObject: Object, avroSchema: Schema
+  ): Object = {
+    val resList = new util.ArrayList[Object]
+    avroSchema.getElementType.getType match {
+      case Schema.Type.RECORD => avroObject match {
+        case v: util.List[_] =>
+          v.forEach(x => {
+            val elemAvroObj = x.asInstanceOf[GenericRecord].get(field)
+            val elemAvroSchema = elemAvroObj.asInstanceOf[GenericRecord].getSchema
+            val childElemAvroObj = recursiveFieldAccessor(rest, elemAvroObj, elemAvroSchema)
+            childElemAvroObj match {
+              case l: util.List[Object] => l.forEach(x => resList.add(x))
+              case _ => resList.add(childElemAvroObj)
+            }
+          })
+        case _ => throw new Exception("not handled")
+      }
+      case _ => throw new Exception("not handled")
+    }
     resList
   }
 
   // scalastyle:off cyclomatic.complexity
+  private def evalArrayEndNodeAccessor(
+    field: String, avroObject: Object, avroSchema: Schema, flatten: Boolean
+  ): Object = {
+    val resList = new util.ArrayList[Object]
+    avroSchema.getElementType.getType match {
+      case Schema.Type.RECORD => avroObject match {
+        case v: util.List[_] =>
+          v.forEach(x => {
+            val elemAvroObj = x.asInstanceOf[GenericRecord].get(field)
+            val elemAvroSchema = x.asInstanceOf[GenericRecord].getSchema.getField(field).schema
+            // If the schema type is a primitive, then the element is not an array
+            if (PRIMITIVES.contains(elemAvroSchema.getType)) {
+              resList.add(elemAvroObj)
+            } else {
+              if (flatten) {
+              // Assume each element is an array
+              elemAvroSchema.getElementType.getType match {
+                case Schema.Type.RECORD =>
+                  elemAvroObj.asInstanceOf[util.ArrayList[Object]].forEach(y => resList.add(y))
+                case schema if PRIMITIVES.contains(schema) =>
+                  elemAvroObj.asInstanceOf[Wrappers.SeqWrapper[Object]].forEach(y => resList.add(y))
+                case _ => throw new Exception("not handled")
+              }
+            } else {
+                resList.add(elemAvroObj)
+              }
+            }
+          })
+          resList
+        case _ => throw new Exception("not handled")
+      }
+      case _ => throw new Exception("not handled")
+    }
+  }
+  // scalastyle:on cyclomatic.complexity
+
+  private def checkUnionSchema(
+      path: String, avroObject: Object, avroSchema: Schema
+  ): Object = {
+    if (avroObject == null) {
+      avroObject
+    } else {
+      // assumes Union type is used only for nullability, below code removes the null schema
+      avroSchema.getTypes.removeIf(_.getType == Schema.Type.NULL)
+      recursiveFieldAccessor(path, avroObject, avroSchema.getTypes.get(0))
+    }
+  }
+
+  // scalastyle:off cyclomatic.complexity method.length
   @tailrec
   private def recursiveFieldAccessor(
     path: String, avroObject: Object, avroSchema: Schema
   ): Object = {
     path match {
-      case hasLeafPath(field, rest) =>
+      case hasNextLeaf(field, rest) =>
         avroSchema.getType match {
           case Schema.Type.RECORD =>
             val innerObject = avroObject.asInstanceOf[GenericRecord].get(field)
             val innerSchema = avroSchema.getField(field).schema()
             recursiveFieldAccessor(rest, innerObject, innerSchema)
+          case Schema.Type.UNION =>
+            checkUnionSchema(path,avroObject, avroSchema)
           case Schema.Type.ARRAY =>
-            evalArrayAccessor(field, rest, avroObject)
+            throw new InvalidAvroFieldOperationException(
+              "[] is required for an array schema")
           case schema if PRIMITIVES.contains(schema) =>
-            throw new Exception("should not happen")
+            throw new InvalidAvroFieldOperationException(
+              "Avro field cannot be retrieved from a primitive schema type")
           case _ =>
-            // Still need to implement Union/Map/ENUM Not sure about FIXED
-            throw new Exception("oops not handled")
+            throw new InvalidAvroFieldOperationException(
+              "Map, Enum and Fixed Avro schema types are currently not supported")
         }
-      case isLeaf(field) =>
-        avroSchema.getType match {
-          case Schema.Type.RECORD => avroObject.asInstanceOf[GenericRecord].get(field)
-          // This assumes that what can be within an array is only generics. need to handle the
-          // case where the inside is non-primitive or generics (e.g. maps and arrays)
+      case hasNextLeafArray(field, rest) =>
+        val childObj = avroObject.asInstanceOf[GenericRecord].get(field)
+        val childSchema = avroObject.asInstanceOf[GenericRecord].getSchema.getField(field).schema
+        childSchema.getType match {
           case Schema.Type.ARRAY =>
-            val resList = new util.ArrayList[Object]
-            val avroObjList = avroObject.asInstanceOf[java.util.ArrayList[_]]
-            avroObjList.forEach(x => resList.add(x.asInstanceOf[GenericRecord].get(field)))
-            resList
-          case schema if PRIMITIVES.contains(schema) =>
-            throw new Exception("should not happen")
+            rest match {
+              case hasNextLeaf(cField, cRest) =>
+                evalArrayAccessor(cField, cRest, childObj, childSchema)
+              case isLeafNode(cField) =>
+                evalArrayEndNodeAccessor(cField, childObj, childSchema, flatten = false)
+              case isLeafNodeArray(cField) =>
+                evalArrayEndNodeAccessor(cField, childObj, childSchema, flatten = true)
+            }
           case _ =>
-            // Still need to implement Union/Map/ENUM Not sure about FIXED
-            throw new Exception("oops not handled")
+            throw new InvalidAvroFieldOperationException(
+              "usage of [] is valid for only array schema")
+        }
+      case isLeafNode(field) =>
+        avroSchema.getType match {
+          case Schema.Type.RECORD =>
+            avroObject.asInstanceOf[GenericRecord].get(field)
+          case Schema.Type.UNION =>
+            checkUnionSchema(path,avroObject, avroSchema)
+          case Schema.Type.ARRAY =>
+            evalArrayEndNodeAccessor(field, avroObject, avroSchema, flatten = false)
+          case schema if PRIMITIVES.contains(schema) =>
+            throw new InvalidAvroFieldOperationException(
+              "Avro field cannot be retrieved from a primitive schema type")
+          case _ =>
+            throw new InvalidAvroFieldOperationException(
+              "Map, Enum and Fixed Avro schema types are currently not supported")
+        }
+      case isLeafNodeArray(field) =>
+        avroSchema.getType match {
+          case Schema.Type.ARRAY =>
+            evalArrayEndNodeAccessor(field, avroObject, avroSchema, flatten = true)
+          case _ =>
+            throw new InvalidAvroFieldOperationException(
+              "usage of [] is valid for only array schema")
         }
     }
   }
-  // scalastyle:off cyclomatic.complexity
+  // scalastyle:on method.length cyclomatic.complexity
 
   def getAvroValue(fieldValidationInput: String, avroRecord: GenericRecord): Object = {
     recursiveFieldAccessor(fieldValidationInput, avroRecord, avroRecord.getSchema)

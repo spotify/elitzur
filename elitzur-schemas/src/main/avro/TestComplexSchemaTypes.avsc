@@ -1,0 +1,25 @@
+{
+  "name": "TestComplexSchemaTypes",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name": "optRecord",
+      "type": [
+        "null",
+        {
+          "name": "InnerComplexType",
+          "type": "record",
+          "fields": [
+            {
+              "name": "optString",
+              "type": ["null", "string"],
+              "default": null
+            }
+          ]
+        }
+      ],
+      "default": null
+    }
+  ]
+}

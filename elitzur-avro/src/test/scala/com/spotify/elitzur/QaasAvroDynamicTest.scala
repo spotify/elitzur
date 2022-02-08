@@ -18,7 +18,6 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.qaas.{
-  AvroFieldExtractor,
   QaasAvroRecordValidator,
   QaasValidationCompanion,
   QaasValidationCompanionImplicits
@@ -73,87 +72,29 @@ object QaasValidationCompanionProviderTest {
 }
 
 class DynamicRecordValidatorTest extends AnyFlatSpec with Matchers {
-  import com.spotify.elitzur.schemas._
+  import helpers.SampleAvroRecords._
 
-  val inner = InnerNestedType.newBuilder()
-    .setUserId("")
-    .setCountryCode("")
-    .setPlayCount(0L)
-    .build()
+  it should "process beginning to end" in {
+    val avroFieldWithValidation: Array[String] = Array(
+      "innerOpt.playCount:NonNegativeLong",
+      "innerOpt.userId:CountryCode"
+    )
 
-  val innerV2 = InnerNestedType.newBuilder()
-    .setUserId("abc")
-    .setCountryCode("xyz")
-    .setPlayCount(5L)
-    .build()
+    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
+    val qaasValidationCompanionMap: Map[String, QaasValidationCompanion] =
+      QaasValidationCompanionProviderTest.getQaasValidationCompanion
 
-  val javaInnerList: util.List[InnerNestedType] = new util.ArrayList[InnerNestedType]
-  javaInnerList.add(inner)
-  javaInnerList.add(innerV2)
+    val tester = new QaasAvroRecordValidator(avroFieldWithValidation, qaasValidationCompanionMap)
 
-  val innerNestedArrayType = InnerNestedArrayType.newBuilder()
-    .setArrayInnerNested(javaInnerList)
-    .build()
+    tester.validateRecord(testAvroRecord(2))
 
-  val innerNestedWithArrayFieldType = InnerNestedWithArrayFieldType.newBuilder()
-    .setUserId("abc")
-    .setInnerNested(innerNestedArrayType)
-    .build()
+    val thisMetricType = tester.validationInputs.headOption.get
 
-  val arrayInnerNested = new util.ArrayList[InnerNestedWithArrayFieldType]
-  arrayInnerNested.add(innerNestedWithArrayFieldType)
-  arrayInnerNested.add(innerNestedWithArrayFieldType)
-
-  val javaLongList: util.List[java.lang.Long] = new util.ArrayList[java.lang.Long]
-  javaLongList.add(9)
-  javaLongList.add(7)
-
-  val testAvroTypeR = TestAvroArrayTypes.newBuilder()
-    .setUserAge(0L)
-    .setUserFloat(0F)
-    .setUserLong(0L)
-    .setInnerOpt(inner)
-    .setArrayLongs(javaLongList)
-    .setArrayInnerNested(arrayInnerNested)
-    .build()
-
-  it should "pass new parser" in {
-//    val res1 = AvroFieldExtractor.getAvroValue("innerOpt.userId", testAvroTypeR)
-//    res1
-//    val res2 = AvroFieldExtractor.getAvroValue(
-//      "arrayInnerNested.innerNested.arrayInnerNested.countryCode", testAvroTypeR)
-//    res2
-
-    val res3 = AvroFieldExtractor.getAvroValue("innerOptNull.userId", testAvroTypeR) // not handled
-    res3
-
-//    val res4 = AvroFieldExtractor.getAvroValue("arrayLongs", testAvroTypeR)
-//    res4
-
-
+    metricsReporter.asInstanceOf[DynamicRecordValidatorTest.TestMetricsReporter].getValid(
+      tester.className,
+      thisMetricType.label,
+      thisMetricType.qaasValidationCompanion.validatorIdentifier
+    ) shouldEqual 1
   }
-
-//  it should "process beginning to end" in {
-//    val avroFieldWithValidation: Array[String] = Array(
-//      "innerOpt.playCount:NonNegativeLong",
-//      "innerOpt.userId:CountryCode"
-//    )
-//
-//    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
-//    val qaasValidationCompanionMap: Map[String, QaasValidationCompanion] =
-//      QaasValidationCompanionProviderTest.getQaasValidationCompanion
-//
-//    val tester = new QaasAvroRecordValidator(avroFieldWithValidation, qaasValidationCompanionMap)
-//
-//    tester.validateRecord(testAvroTypeR)
-//
-//    val thisMetricType = tester.validationInputs.headOption.get
-//
-//    metricsReporter.asInstanceOf[DynamicRecordValidatorTest.TestMetricsReporter].getValid(
-//      tester.className,
-//      thisMetricType.label,
-//      thisMetricType.qaasValidationCompanion.validatorIdentifier
-//    ) shouldEqual 1
-//  }
 
 }

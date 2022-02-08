@@ -45,7 +45,6 @@ class QaasAvroRecordValidator(
   // a more stringent input parsing / meaningful exception messages to be added below
   val validationInputs: Array[QaasAvroFieldValidator] = {
     val validationArgRegex: Regex = """^(.*):(.*)$""".r
-
     validationArgs.flatMap {
       case validationArgRegex(fieldPath, validatorName) =>
         Some(QaasAvroFieldValidator(fieldPath, validatorCompanion(validatorName.toUpperCase)))
