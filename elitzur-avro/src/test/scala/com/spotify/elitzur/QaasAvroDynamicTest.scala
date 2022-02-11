@@ -48,7 +48,7 @@ object QaasValidationCompanionProviderTest {
   import QaasValidationCompanionImplicits._
 
   // Expected to be made by jinja
-  def getQaasValidationCompanion: Map[String, QaasValidationCompanion] = {
+  def getValidationCompanion: Map[String, QaasValidationCompanion] = {
     Map[String, QaasValidationCompanion](
       NonNegativeLongCompanion.validationType.toUpperCase ->
         new QaasValidationCompanion(NonNegativeLongCompanion.validationType) {
@@ -71,16 +71,18 @@ object QaasValidationCompanionProviderTest {
 
 class DynamicRecordValidatorTest extends AnyFlatSpec with Matchers {
   import helpers.SampleAvroRecords._
+  import QaasValidationCompanionProviderTest._
 
   it should "process beginning to end" in {
+
     val avroFieldWithValidation: Array[String] = Array(
       "innerOpt.playCount:NonNegativeLong",
       "innerOpt.userId:CountryCode"
     )
 
     implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
-    val qaasValidationCompanionMap: Map[String, QaasValidationCompanion] =
-      QaasValidationCompanionProviderTest.getQaasValidationCompanion
+
+    val qaasValidationCompanionMap: Map[String, QaasValidationCompanion] = getValidationCompanion
 
     val tester = new QaasAvroRecordValidator(avroFieldWithValidation, qaasValidationCompanionMap)
 
