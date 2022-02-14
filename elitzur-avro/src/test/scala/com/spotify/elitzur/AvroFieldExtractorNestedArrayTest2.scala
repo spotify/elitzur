@@ -18,7 +18,6 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.qaas.AvroFieldExtractor
-import com.spotify.elitzur.converters.avro.qaas.AvroFieldExtractor.PRIMITIVES
 import com.spotify.elitzur.schemas.{InnerComplexType, TestComplexArrayTypes, TestComplexSchemaTypes}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
@@ -62,7 +61,7 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val fns = AvroFieldExtractorV2.getAvroValue(avroPath, testSimpleAvroRecord.getSchema)
     val fn = combineFns(fns)
 
-    fns should be (List(GenericRecordOperation(3), GenericRecordOperation(0)))
+    fns.map(_.ops) should be (List(GenericRecordOperation(3), GenericRecordOperation(0)))
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInnerOpt.getUserId)
   }
 
@@ -71,6 +70,7 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
    */
   it should "extract a null from an Union schema type v2" in {
     // Input: {"optRecord": null}
+    // Output: null
     val testNullRecord = TestComplexSchemaTypes.newBuilder().setOptRecord(null).build
     val avroPath = "optRecord.optString"
 
@@ -80,12 +80,13 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val expectedFns: List[OperationBase] = List[OperationBase](
       GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
 
-    fns should be (expectedFns)
+    fns.map(_.ops) should be (expectedFns)
     fn(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
   it should "extract a null from a nested Union Avro schema type v2" in {
     // Input: {"optRecord": {"optString": null}}
+    // Output: null
     val testInnerNullRecord = TestComplexSchemaTypes.newBuilder()
       .setOptRecord(InnerComplexType.newBuilder().setOptString(null).build).build
     val avroPath = "optRecord.optString"
@@ -96,7 +97,7 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val expectedFns: List[OperationBase] = List[OperationBase](
       GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
 
-    fns should be (expectedFns)
+    fns.map(_.ops) should be (expectedFns)
     fn(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
 
@@ -113,7 +114,7 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val expectedFns: List[OperationBase] = List[OperationBase](
       GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
 
-    fns should be (expectedFns)
+    fns.map(_.ops) should be (expectedFns)
     fn(testInnerNonNullRecord) should be (testInnerNonNullRecord.getOptRecord.getOptString)
   }
 
@@ -137,7 +138,6 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
 
     // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
     // Output: ["one", "two"]
-
     val fns = AvroFieldExtractorV2.getAvroValue("innerArrayRoot.userId",
       testArrayRecord.getSchema)
     val fn = combineFns(fns)
@@ -153,7 +153,6 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     //    {"innerArrayInsideRecord": "deepNestedRecord": {"recordId": -5}}"}
     //    ]}
     // Output: [-1, -5]
-
     val fns = AvroFieldExtractorV2.getAvroValue(
       "innerArrayRoot.deepNestedRecord.recordId", testArrayRecord.getSchema)
     val fn = combineFns(fns)
@@ -162,14 +161,27 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getDeepNestedRecord.getRecordId).asJava)
   }
 
+  it should "extract an array within an array" in {
+
+    // Input: {"innerArrayRoot": [
+    //    {"innerArrayInsideRecord": [1, 2]},
+    //    {"innerArrayInsideRecord": [3, 4]}
+    //    ]}
+    // Output: [[1, 2], [3, 4]]
+
+    val fns = AvroFieldExtractorV2.getAvroValue(
+      "innerArrayRoot.innerArrayInsideRecord", testArrayRecord.getSchema)
+    val fn = combineFns(fns)
+
+    fn(testArrayRecord) should be (
+      testArrayRecord.getInnerArrayRoot.asScala.map(_.getInnerArrayInsideRecord).asJava)
+  }
 
 }
 
 object AvroFieldExtractorV2 {
   private val hasNextLeaf: Regex = """^([a-zA-Z0-9]*)\.(.*)""".r
   private val isLeafNode: Regex = """^([a-zA-Z0-9]*)$""".r
-  private val hasNextLeafArray: Regex = """^([a-zA-Z0-9]*)\[\]\.(.*)""".r
-  private val isLeafNodeArray: Regex = """^([a-zA-Z0-9]*)\[\]$""".r
 
   def getAvroValue(
     path: String,
@@ -180,10 +192,15 @@ object AvroFieldExtractorV2 {
       case hasNextLeaf(field, rest) =>
         val funThingy = new BaseThingy(path, field, Some(rest))
         val avroOp = funThingy.schemaFun(avroSchema)
-        getAvroValue(avroOp.rest.get, avroOp.schema, baseFunList :+ avroOp)
+        if (avroOp.rest.isDefined) {
+          getAvroValue(avroOp.rest.get, avroOp.schema, baseFunList :+ avroOp)
+        } else {
+          baseFunList :+ avroOp
+        }
       case isLeafNode(field) =>
         val funThingy = new BaseThingy(path, field)
-        baseFunList :+ funThingy.schemaFun(avroSchema)
+        val avroOp = funThingy.schemaFun(avroSchema)
+        baseFunList :+ avroOp
     }
   }
 }
@@ -208,21 +225,25 @@ class BaseThingy(path: String, field: String, rest: Option[String] = None) {
       case Schema.Type.ARRAY =>
         val arraySchema = schema.getElementType
         val innerOps = AvroFieldExtractorV2.getAvroValue(path, arraySchema)
-        val remainingField = innerOps.lastOption.flatMap(_.rest)
-        arraySchema.getField(field).schema.getType match {
-          case Schema.Type.RECORD =>
-            AvroOperation(ArrayOperation(
-              innerOps.map(_.ops), CastArrayListOperation()), arraySchema, remainingField)
-          case schema if PRIMITIVES.contains(schema) =>
-            AvroOperation(
-              ArrayOperation(
-                innerOps.map(_.ops), CastSeqWrapperOperation()), arraySchema, remainingField)
-        }
+        getAvroArrayOperation(arraySchema, field, innerOps)
       case schema if PRIMITIVES.contains(schema) => throw new Exception("abc")
       case Schema.Type.MAP | Schema.Type.FIXED | Schema.Type.ENUM => throw new Exception("abc")
     }
   }
   // scalastyle:on cyclomatic.complexity
+
+  // unfortunate function to get around Scala's weird array casting
+  def getAvroArrayOperation(
+    arraySchema: Schema, innerField: String, innerOps: List[AvroOperation]): AvroOperation = {
+    val ops = innerOps.map(_.ops)
+    val remainingField = innerOps.lastOption.flatMap(_.rest)
+    arraySchema.getField(innerField).schema.getType match {
+      case Schema.Type.RECORD | Schema.Type.ARRAY => AvroOperation(
+        ArrayOperation(ops, CastArrayListOperation()), arraySchema, remainingField)
+      case schema if PRIMITIVES.contains(schema) => AvroOperation(
+        ArrayOperation(ops, CastSeqWrapperOperation()), arraySchema, remainingField)
+    }
+  }
 }
 
 case class AvroOperation(ops: OperationBase, schema: Schema, rest: Option[String])
