@@ -17,44 +17,52 @@
 
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.qaas.AvroFieldExtractor
-import com.spotify.elitzur.converters.avro.qaas.AvroFieldExtractorExceptions.InvalidAvroFieldOperationException
+import com.spotify.elitzur.converters.avro.qaas.{AvroObjMapper, AvroRecursiveDataHolder}
+import com.spotify.elitzur.converters.avro.qaas.utils.NoopAvroObjWrapper
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
   import helpers.SampleAvroRecords._
 
+  def combineFns(fns: List[AvroRecursiveDataHolder]): Any => Any =
+    (fns.map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g).get.fn
+
   it should "extract a primitive at the record root level" in {
     val testSimpleAvroRecord = innerNestedSample()
-    val userId = AvroFieldExtractor.getAvroValue("userId", testSimpleAvroRecord)
-    userId should be (testSimpleAvroRecord.getUserId)
+    val fn = combineFns(
+      AvroObjMapper.extract("userId", testSimpleAvroRecord.getSchema)
+    )
+    fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getUserId)
   }
 
   it should "extract an array at the record root level" in {
     val testSimpleAvroRecord = testAvroRecord(2)
-    val arrayOfLong = AvroFieldExtractor.getAvroValue("arrayLongs", testSimpleAvroRecord)
-    arrayOfLong should be (testSimpleAvroRecord.getArrayLongs)
+    val fn = combineFns(
+      AvroObjMapper.extract("arrayLongs", testSimpleAvroRecord.getSchema)
+    )
+    fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getArrayLongs)
   }
 
-  it should "throw an exception if a field is being retrieved from a primitive schema type" in {
-    val testSimpleAvroRecord = innerNestedSample()
-    val caught = intercept[InvalidAvroFieldOperationException] {
-      AvroFieldExtractor.getAvroValue("userId.cannotBeAField", testSimpleAvroRecord)
-    }
-    caught.getMessage should be ("Avro field cannot be retrieved from a primitive schema type")
+  it should "extract a nested record" in {
+    val testSimpleAvroRecord = testAvroRecord(2)
+    val avroPath = "innerOpt.userId"
+
+    val fns = AvroObjMapper.extract(avroPath, testSimpleAvroRecord.getSchema)
+    val fn = combineFns(fns)
+
+    //    fns.map(_.ops) should be (List(GenericRecordOperation(3), GenericRecordOperation(0)))
+    fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInnerOpt.getUserId)
   }
 
-  it should "throw an exception for incorrect field name" in {
-    val testSimpleAvroRecord = innerNestedSample()
-    // NullPointerException is meaningless here, custom exception message should be returned.
-    // This is a reminder to do so.
-    assertThrows[java.lang.NullPointerException] {
-      AvroFieldExtractor.getAvroValue("notAField", testSimpleAvroRecord)
-    }
-    //    val abc = testAvroRecord(2)
-    //    val res2 = AvroFieldExtractor.getAvroValue(
-    //      "arrayInnerNested.innerNested.arrayInnerNested.countryCode", abc)
-    //    res2
-  }
+  //  it should "extract complex case" in {
+  //
+  //    val testRecord = testAvroRecord(2)
+  //    val fns = AvroFieldExtractorV2.getAvroValue(
+  //        "arrayInnerNested[].innerNested.arrayInnerNested[].countryCode[]", testRecord.getSchema)
+  //    val fn = combineFns(fns)
+  //
+  //    val whatisthis = fn(testRecord)
+  //    whatisthis
+  //  }
 }

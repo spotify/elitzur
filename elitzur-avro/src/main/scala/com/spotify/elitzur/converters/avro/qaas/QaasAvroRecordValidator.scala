@@ -18,6 +18,7 @@
 package com.spotify.elitzur.converters.avro.qaas
 
 import com.spotify.elitzur.MetricsReporter
+import com.spotify.elitzur.converters.avro.qaas.utils.NoopAvroObjWrapper
 import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
 import org.apache.avro.generic.GenericRecord
 
@@ -28,9 +29,12 @@ case class QaasAvroFieldValidator(
 
   val label: String = s"$avroPathStr:${qaasValidationCompanion.validatorIdentifier}"
 
-  def getValidatationClassWithData(avroRecord: GenericRecord): Any = {
-    val avroFieldValue = AvroFieldExtractor.getAvroValue(this.avroPathStr, avroRecord)
-    qaasValidationCompanion.validatorCheckParser(avroFieldValue)
+  def getValidationClassWithData(avroRecord: GenericRecord): Any = {
+    val avroFn = AvroObjMapper.extract(this.avroPathStr, avroRecord.getSchema)
+    def combineFns(fns: List[AvroRecursiveDataHolder]): Any => Any =
+      ((fns).map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g).get.fn
+    val fn = combineFns(avroFn)
+    qaasValidationCompanion.validatorCheckParser(fn(avroRecord))
   }
 
 }
@@ -59,7 +63,7 @@ class QaasAvroRecordValidator(
 
   def validateRecord(avroRecord: GenericRecord): Unit = {
     val seqValidationClassOnAvroRecord: Seq[Any] = validationInputs
-      .map(_.getValidatationClassWithData(avroRecord))
+      .map(_.getValidationClassWithData(avroRecord))
     recordValidator.validateRecord(
       Unvalidated(seqValidationClassOnAvroRecord),
       outermostClassName = Some(className)

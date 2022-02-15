@@ -21,11 +21,11 @@ import com.spotify.elitzur.validators.{BaseCompanion, BaseValidationType, Valida
 
 abstract case class QaasValidationCompanion(validatorIdentifier: String) {
   val validator: Validator[_]
-  def validatorCheckParser: Object => Any
+  def validatorCheckParser: Any => Any
 }
 
 object QaasValidationCompanionImplicits {
   implicit class AugmentBaseCompanion[T, LT <: BaseValidationType[T]](c: BaseCompanion[T, LT]) {
-    def parseAvroObj(x: Object): Any = c.parse(x.asInstanceOf[T])
+    def parseAvroObj(x: Any): Any = c.parse(x.asInstanceOf[T])
   }
 }

@@ -17,39 +17,63 @@
 
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.qaas.AvroFieldExtractor
-import com.spotify.elitzur.schemas.TestComplexSchemaTypes
+import com.spotify.elitzur.converters.avro.qaas.utils.NoopAvroObjWrapper
+import com.spotify.elitzur.converters.avro.qaas.{ AvroObjMapper, AvroRecursiveDataHolder}
+import com.spotify.elitzur.schemas.{InnerComplexType, TestComplexSchemaTypes}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
-  import helpers.SampleAvroRecords._
+  def combineFns(fns: List[AvroRecursiveDataHolder]): Any => Any =
+    ((fns).map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g).get.fn
 
-  val testNullRecord: TestComplexSchemaTypes = testComplexTypeRecord(
-    isNull = true, isInternalNull = false)
-
-  val testInnerNullRecord: TestComplexSchemaTypes = testComplexTypeRecord(
-    isNull = false, isInternalNull = true)
-
-  val testInnerNonNullRecord: TestComplexSchemaTypes = testComplexTypeRecord(
-    isNull = false, isInternalNull = false)
-
-  it should "extract a null from an Union schema type " in {
+  it should "extract a null from an Union schema type v2" in {
     // Input: {"optRecord": null}
-    val innerOptNull = AvroFieldExtractor.getAvroValue("optRecord", testNullRecord)
-    innerOptNull should be (null)
+    // Output: null
+    val testNullRecord = TestComplexSchemaTypes.newBuilder().setOptRecord(null).build
+    val avroPath = "optRecord.optString"
+
+    val fns = AvroObjMapper.extract(avroPath, testNullRecord.getSchema)
+    val fn = combineFns(fns)
+
+    //    val expectedFns: List[OperationBase] = List[OperationBase](
+    //      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
+    //
+    //    fns.map(_.ops) should be (expectedFns)
+    fn(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
-  it should "extract a null from a nested Union Avro schema type" in {
+  it should "extract a null from a nested Union Avro schema type v2" in {
     // Input: {"optRecord": {"optString": null}}
-    val innerOptNull = AvroFieldExtractor.getAvroValue("optRecord.optString", testInnerNullRecord)
-    innerOptNull should be (null)
+    // Output: null
+    val testInnerNullRecord = TestComplexSchemaTypes.newBuilder()
+      .setOptRecord(InnerComplexType.newBuilder().setOptString(null).build).build
+    val avroPath = "optRecord.optString"
+
+    val fns = AvroObjMapper.extract(avroPath, testInnerNullRecord.getSchema)
+    val fn = combineFns(fns)
+
+    //    val expectedFns: List[OperationBase] = List[OperationBase](
+    //      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
+    //
+    //    fns.map(_.ops) should be (expectedFns)
+    fn(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
 
-  it should "extract a primitive from a Union Avro schema type" in {
-    // {"optRecord": {"optString": "abc"}}
-    val innerOptNull = AvroFieldExtractor.getAvroValue(
-      "optRecord.optString", testInnerNonNullRecord)
-    innerOptNull should be (testInnerNonNullRecord.getOptRecord.getOptString)
+  it should "extract a primitive from a Union Avro schema type v2" in {
+    // Input: {"optRecord": {"optString": "abc"}}
+    // Output: "abc"
+    val testInnerNonNullRecord = TestComplexSchemaTypes.newBuilder()
+      .setOptRecord(InnerComplexType.newBuilder().setOptString("abc").build).build
+    val avroPath = "optRecord.optString"
+
+    val fns = AvroObjMapper.extract(avroPath, testInnerNonNullRecord.getSchema)
+    val fn = combineFns(fns)
+
+    //    val expectedFns: List[OperationBase] = List[OperationBase](
+    //      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
+    //
+    //    fns.map(_.ops) should be (expectedFns)
+    fn(testInnerNonNullRecord) should be (testInnerNonNullRecord.getOptRecord.getOptString)
   }
 }

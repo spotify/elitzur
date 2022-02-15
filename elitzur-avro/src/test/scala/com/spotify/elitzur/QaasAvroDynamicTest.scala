@@ -53,17 +53,17 @@ object QaasValidationCompanionProviderTest {
       NonNegativeLongCompanion.validationType.toUpperCase ->
         new QaasValidationCompanion(NonNegativeLongCompanion.validationType) {
           override val validator: Validator[_] = implicitly[Validator[NonNegativeLong]]
-          override def validatorCheckParser: Object => Any = NonNegativeLongCompanion.parseAvroObj
+          override def validatorCheckParser: Any => Any = NonNegativeLongCompanion.parseAvroObj
         },
       NonNegativeDoubleCompanion.validationType.toUpperCase ->
         new QaasValidationCompanion(NonNegativeDoubleCompanion.validationType) {
           override val validator: Validator[_] = implicitly[Validator[NonNegativeDouble]]
-          override def validatorCheckParser: Object => Any = NonNegativeDoubleCompanion.parseAvroObj
+          override def validatorCheckParser: Any => Any = NonNegativeDoubleCompanion.parseAvroObj
         },
       CountryCompanion.validationType.toUpperCase ->
         new QaasValidationCompanion(CountryCompanion.validationType) {
           override val validator: Validator[_] = implicitly[Validator[CountryCode]]
-          override def validatorCheckParser: Object => Any = CountryCompanion.parseAvroObj
+          override def validatorCheckParser: Any => Any = CountryCompanion.parseAvroObj
         }
       )
   }
