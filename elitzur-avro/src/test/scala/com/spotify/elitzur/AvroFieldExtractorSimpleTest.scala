@@ -55,14 +55,14 @@ class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInnerOpt.getUserId)
   }
 
-  //  it should "extract complex case" in {
-  //
-  //    val testRecord = testAvroRecord(2)
-  //    val fns = AvroFieldExtractorV2.getAvroValue(
-  //        "arrayInnerNested[].innerNested.arrayInnerNested[].countryCode[]", testRecord.getSchema)
-  //    val fn = combineFns(fns)
-  //
-  //    val whatisthis = fn(testRecord)
-  //    whatisthis
-  //  }
+    it should "extract complex case" in {
+
+      val testRecord = testAvroRecord(2)
+      val fns = AvroObjMapper.extract(
+          "arrayInnerNested[].innerNested.arrayInnerNested[].countryCode", testRecord.getSchema)
+      val fn = combineFns(fns)
+
+      val whatisthis = fn(testRecord)
+      whatisthis
+    }
 }

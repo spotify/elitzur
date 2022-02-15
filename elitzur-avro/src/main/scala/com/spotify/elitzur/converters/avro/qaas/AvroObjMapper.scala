@@ -86,7 +86,8 @@ class AvroWrappers(path: String, field: String, rest: Option[String] = None) {
     arraySchema: Schema, innerField: String, innerOps: List[AvroRecursiveDataHolder],
     c: AvroWrapperOperator
   ): AvroRecursiveDataHolder = {
-    val innerFn = innerOps.map(_.ops).reduceLeftOption((f, g) => f + g).get.fn
+    val innerFn = (innerOps.map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g)
+      .get.fn
     val remainingField = innerOps.lastOption.flatMap(_.rest)
     arraySchema.getField(innerField).schema.getType match {
       case Schema.Type.RECORD | Schema.Type.ARRAY => AvroRecursiveDataHolder(

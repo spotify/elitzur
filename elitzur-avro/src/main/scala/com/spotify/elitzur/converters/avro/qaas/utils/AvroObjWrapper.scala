@@ -7,13 +7,13 @@ import scala.collection.convert.Wrappers
 
 /**
  * Below
- * @param combiner
+ * @param op
  */
-abstract class AvroObjWrapper(combiner: AvroWrapperOperator) {
+abstract class AvroObjWrapper(op: AvroWrapperOperator) {
   def fn: Any => Any
-  val _combiner = combiner
+  val _op: AvroWrapperOperator = op
   def +(that: AvroObjWrapper): CombinedOperation = CombinedOperation(
-    combiner.combine(this, that), that._combiner)
+    this._op.combine(this, that), that._op)
 }
 
 case class NoopAvroObjWrapper() extends AvroObjWrapper(new NoopWrapperOperator) {
@@ -36,7 +36,10 @@ case class ArrayAvroObjWrapper[T <: ju.List[_]](
     val res = new ju.ArrayList[Any]
     if (shouldFlatten) {
       // need to revisit this portion
-      cast.cast(o).forEach{ elem => res.add(innerFn(elem)) }
+      cast.cast(o).forEach{
+        case elem: ju.ArrayList[_] => elem.forEach( x => res.add(x) )
+        case elem: Wrappers.SeqWrapper[_] => elem.forEach( x => res.add(x) )
+      }
     } else {
       cast.cast(o).forEach{ elem => res.add(innerFn(elem)) }
     }
