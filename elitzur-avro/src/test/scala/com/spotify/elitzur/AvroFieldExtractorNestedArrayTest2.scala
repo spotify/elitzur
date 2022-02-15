@@ -17,7 +17,6 @@
 
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.qaas.AvroFieldExtractor
 import com.spotify.elitzur.schemas.{InnerComplexType, TestComplexArrayTypes, TestComplexSchemaTypes}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
@@ -32,8 +31,9 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
 
   import helpers.SampleAvroRecords._
 
+
   def combineFns(fns: List[AvroOperation]): Any => Any =
-    fns.map(_.ops.fn).reduceLeftOption((f, g) => f andThen g).get
+    ((fns).map(_.ops) :+ NoopOperation()).reduceLeftOption((f, g) => f + g).get.fn
 
   /**
    * Simple tests
@@ -61,7 +61,7 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val fns = AvroFieldExtractorV2.getAvroValue(avroPath, testSimpleAvroRecord.getSchema)
     val fn = combineFns(fns)
 
-    fns.map(_.ops) should be (List(GenericRecordOperation(3), GenericRecordOperation(0)))
+//    fns.map(_.ops) should be (List(GenericRecordOperation(3), GenericRecordOperation(0)))
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInnerOpt.getUserId)
   }
 
@@ -77,10 +77,10 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val fns = AvroFieldExtractorV2.getAvroValue(avroPath, testNullRecord.getSchema)
     val fn = combineFns(fns)
 
-    val expectedFns: List[OperationBase] = List[OperationBase](
-      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
-
-    fns.map(_.ops) should be (expectedFns)
+//    val expectedFns: List[OperationBase] = List[OperationBase](
+//      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
+//
+//    fns.map(_.ops) should be (expectedFns)
     fn(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
@@ -94,10 +94,10 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val fns = AvroFieldExtractorV2.getAvroValue(avroPath, testInnerNullRecord.getSchema)
     val fn = combineFns(fns)
 
-    val expectedFns: List[OperationBase] = List[OperationBase](
-      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
-
-    fns.map(_.ops) should be (expectedFns)
+//    val expectedFns: List[OperationBase] = List[OperationBase](
+//      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
+//
+//    fns.map(_.ops) should be (expectedFns)
     fn(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
 
@@ -111,10 +111,10 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     val fns = AvroFieldExtractorV2.getAvroValue(avroPath, testInnerNonNullRecord.getSchema)
     val fn = combineFns(fns)
 
-    val expectedFns: List[OperationBase] = List[OperationBase](
-      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
-
-    fns.map(_.ops) should be (expectedFns)
+//    val expectedFns: List[OperationBase] = List[OperationBase](
+//      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
+//
+//    fns.map(_.ops) should be (expectedFns)
     fn(testInnerNonNullRecord) should be (testInnerNonNullRecord.getOptRecord.getOptString)
   }
 
@@ -138,7 +138,7 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
 
     // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
     // Output: ["one", "two"]
-    val fns = AvroFieldExtractorV2.getAvroValue("innerArrayRoot.userId",
+    val fns = AvroFieldExtractorV2.getAvroValue("innerArrayRoot[].userId",
       testArrayRecord.getSchema)
     val fn = combineFns(fns)
 
@@ -154,7 +154,7 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     //    ]}
     // Output: [-1, -5]
     val fns = AvroFieldExtractorV2.getAvroValue(
-      "innerArrayRoot.deepNestedRecord.recordId", testArrayRecord.getSchema)
+      "innerArrayRoot[].deepNestedRecord.recordId", testArrayRecord.getSchema)
     val fn = combineFns(fns)
 
     fn(testArrayRecord) should be (
@@ -170,18 +170,29 @@ class AvroFieldExtractorNestedArrayTest2 extends AnyFlatSpec with Matchers {
     // Output: [[1, 2], [3, 4]]
 
     val fns = AvroFieldExtractorV2.getAvroValue(
-      "innerArrayRoot.innerArrayInsideRecord", testArrayRecord.getSchema)
+      "innerArrayRoot[].innerArrayInsideRecord[]", testArrayRecord.getSchema)
     val fn = combineFns(fns)
 
     fn(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getInnerArrayInsideRecord).asJava)
   }
 
+//  it should "extract complex case" in {
+//
+//    val testRecord = testAvroRecord(2)
+//    val fns = AvroFieldExtractorV2.getAvroValue(
+//          "arrayInnerNested.innerNested.arrayInnerNested.countryCode", testRecord.getSchema)
+//    val fn = combineFns(fns)
+//
+//    val whatisthis = fn(testRecord)
+//    whatisthis
+//  }
+
 }
 
 object AvroFieldExtractorV2 {
-  private val hasNextLeaf: Regex = """^([a-zA-Z0-9]*)\.(.*)""".r
-  private val isLeafNode: Regex = """^([a-zA-Z0-9]*)$""".r
+  private val hasNextNode: Regex = """^([a-zA-Z0-9]*)([^a-zA-Z\d\s:]+)(\w.*)$""".r
+  private val isNode: Regex = """^([a-zA-Z0-9]*)([^a-zA-Z\d\s:]+)$""".r
 
   def getAvroValue(
     path: String,
@@ -189,17 +200,19 @@ object AvroFieldExtractorV2 {
     baseFunList: List[AvroOperation] = List.empty[AvroOperation]
   ): List[AvroOperation] = {
     path match {
-      case hasNextLeaf(field, rest) =>
+      case hasNextNode(field, combine, rest) =>
         val funThingy = new BaseThingy(path, field, Some(rest))
-        val avroOp = funThingy.schemaFun(avroSchema)
+        val combiner = CombinerFun.matchMethod(combine)
+        val avroOp = funThingy.schemaFun(avroSchema, combiner)
         if (avroOp.rest.isDefined) {
           getAvroValue(avroOp.rest.get, avroOp.schema, baseFunList :+ avroOp)
         } else {
           baseFunList :+ avroOp
         }
-      case isLeafNode(field) =>
+      case isNode(field, combine) =>
         val funThingy = new BaseThingy(path, field)
-        val avroOp = funThingy.schemaFun(avroSchema)
+        val combiner = CombinerFun.matchEndMethod(combine)
+        val avroOp = funThingy.schemaFun(avroSchema, combiner)
         baseFunList :+ avroOp
     }
   }
@@ -212,20 +225,20 @@ class BaseThingy(path: String, field: String, rest: Option[String] = None) {
       Schema.Type.BYTES, Schema.Type.FLOAT, Schema.Type.INT, Schema.Type.NULL)
 
   // scalastyle:off cyclomatic.complexity
-  def schemaFun(schema: Schema): AvroOperation = {
+  def schemaFun(schema: Schema, combiner: Combiner): AvroOperation = {
     schema.getType match {
       case Schema.Type.RECORD =>
         val childSchema = schema.getField(field)
-        AvroOperation(GenericRecordOperation(childSchema.pos), childSchema.schema, rest)
+        AvroOperation(GenericRecordOperation(childSchema.pos, combiner), childSchema.schema, rest)
       case Schema.Type.UNION =>
         // assumes Union type is used specifically for nullability - remove the null schema
         schema.getTypes.removeIf(_.getType == Schema.Type.NULL)
-        val innerAvroOp = schemaFun(schema.getTypes.get(0))
-        AvroOperation(UnionNullOperation(innerAvroOp.ops), innerAvroOp.schema, rest)
+        val innerAvroOp = schemaFun(schema.getTypes.get(0), combiner)
+        AvroOperation(UnionNullOperation(innerAvroOp.ops, combiner), innerAvroOp.schema, rest)
       case Schema.Type.ARRAY =>
         val arraySchema = schema.getElementType
         val innerOps = AvroFieldExtractorV2.getAvroValue(path, arraySchema)
-        getAvroArrayOperation(arraySchema, field, innerOps)
+        getAvroArrayOperation(arraySchema, field, innerOps, combiner)
       case schema if PRIMITIVES.contains(schema) => throw new Exception("abc")
       case Schema.Type.MAP | Schema.Type.FIXED | Schema.Type.ENUM => throw new Exception("abc")
     }
@@ -234,41 +247,62 @@ class BaseThingy(path: String, field: String, rest: Option[String] = None) {
 
   // unfortunate function to get around Scala's weird array casting
   def getAvroArrayOperation(
-    arraySchema: Schema, innerField: String, innerOps: List[AvroOperation]): AvroOperation = {
-    val ops = innerOps.map(_.ops)
+    arraySchema: Schema, innerField: String, innerOps: List[AvroOperation], c: Combiner
+  ): AvroOperation = {
+    val innerFn = innerOps.map(_.ops).reduceLeftOption((f, g) => f + g).get.fn
     val remainingField = innerOps.lastOption.flatMap(_.rest)
     arraySchema.getField(innerField).schema.getType match {
       case Schema.Type.RECORD | Schema.Type.ARRAY => AvroOperation(
-        ArrayOperation(ops, CastArrayListOperation()), arraySchema, remainingField)
+        ArrayOperation(innerFn, CastArrayListOperation(), c), arraySchema, remainingField)
       case schema if PRIMITIVES.contains(schema) => AvroOperation(
-        ArrayOperation(ops, CastSeqWrapperOperation()), arraySchema, remainingField)
+        ArrayOperation(innerFn, CastSeqWrapperOperation(), c), arraySchema, remainingField)
     }
   }
 }
 
 case class AvroOperation(ops: OperationBase, schema: Schema, rest: Option[String])
 
-trait OperationBase {
+abstract class OperationBase(combiner: Combiner) {
   def fn: Any => Any
+  val _combiner: Combiner = combiner
+  def +(that: OperationBase): CombinedOperation = CombinedOperation(
+    combiner.combine(this, that), that._combiner)
 }
 
-case class GenericRecordOperation(idx: Int) extends OperationBase {
+case class NoopOperation() extends OperationBase(new NoopCombiner) {
+  override def fn: Any => Any = (o: Any) => o
+}
+
+case class GenericRecordOperation(idx: Int, c: Combiner) extends OperationBase(c) {
   override def fn: Any => Any = (o: Any) => o.asInstanceOf[GenericRecord].get(idx)
 }
 
-case class UnionNullOperation(op: OperationBase) extends OperationBase {
+case class UnionNullOperation(op: OperationBase, c: Combiner) extends OperationBase(c) {
   override def fn: Any => Any = (o: Any) => if (o == null) o else op.fn(o)
 }
 
-case class ArrayOperation[T <: ju.List[_]](ops: List[OperationBase], c: CastOperationBase[T])
-  extends OperationBase {
+case class ArrayOperation[T <: ju.List[_]](
+  innerFn: Any => Any,
+  cast: CastOperationBase[T],
+  c: Combiner,
+  shouldFlatten: Boolean = false
+ ) extends OperationBase(c) {
   override def fn: Any => Any = (o: Any) => {
     val res = new ju.ArrayList[Any]
-    c.cast(o).forEach(elem => res.add(composedFn.get(elem)))
+    if (shouldFlatten) {
+      // need to revisit this portion
+      cast.cast(o).forEach{ elem => res.add(innerFn(elem)) }
+    } else {
+      cast.cast(o).forEach{ elem => res.add(innerFn(elem)) }
+    }
     res
   }
 
-  val composedFn: Option[Any => Any] = ops.map(_.fn).reduceLeftOption((f, g) => f andThen g)
+  def toFlatten: ArrayOperation[T] = this.copy(shouldFlatten = true)
+}
+
+case class CombinedOperation(newFn: Any => Any, c: Combiner) extends OperationBase(c) {
+  override def fn: Any => Any = newFn
 }
 
 trait CastOperationBase[T <: ju.List[_]] {
@@ -278,3 +312,63 @@ trait CastOperationBase[T <: ju.List[_]] {
 case class CastArrayListOperation() extends CastOperationBase[ju.ArrayList[_]]
 
 case class CastSeqWrapperOperation() extends CastOperationBase[Wrappers.SeqWrapper[_]]
+
+
+object CombinerFun {
+  def matchMethod(str: String): Combiner = {
+    str match {
+      case "." => new GenericCombiner
+      case "[]." => new ArrayCombiner
+    }
+  }
+
+  def matchEndMethod(str: String): Combiner = {
+    if (str.isEmpty) {
+      new NoopCombiner
+    } else {
+      str match {
+        case "[]" => new FlattenCombiner
+      }
+    }
+  }
+
+}
+
+trait Combiner {
+  def combine(`this`: OperationBase, that: OperationBase): Any => Any
+}
+
+class NoopCombiner extends Combiner {
+  def combine(`this`: OperationBase, that: OperationBase): Any => Any = `this`.fn
+}
+
+class GenericCombiner extends Combiner {
+  override def combine(`this`: OperationBase, that: OperationBase): Any => Any =
+    that match {
+      case _: ArrayOperation[_] => throw new Exception("not covered")
+      case _ => `this`.fn andThen that.fn
+    }
+}
+
+class ArrayCombiner extends Combiner {
+  override def combine(`this`: OperationBase, that: OperationBase): Any => Any =
+    that match {
+      case x: ArrayOperation[_] => `this`.fn andThen x.toFlatten.fn
+      case _ => throw new Exception("not covered")
+    }
+}
+
+class FlattenCombiner extends Combiner {
+  def combine(`this`: OperationBase, that: OperationBase): Any => Any = {
+    (o: Any) =>
+    val res = new ju.ArrayList[Any]
+    `this`.fn(o) match {
+      case e: ju.ArrayList[_] => e.forEach {
+        case elems: ju.ArrayList[_] => elems.forEach( x => res.add(x) )
+        case elems: Wrappers.SeqWrapper[_] => elems.forEach( x => res.add(x) )
+      }
+      case _ => throw new Exception("not covered")
+    }
+    res
+  }
+}
