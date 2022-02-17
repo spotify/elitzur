@@ -103,17 +103,18 @@ object ElitzurMetrics {
 
     val isOption = classOf[Option[_]].equals(firstFieldClass)
     val isWrapped = classOf[ValidationStatus[_]].isAssignableFrom(firstFieldClass)
+    val isSeq = classOf[Seq[_]].isAssignableFrom(firstFieldClass)
 
     fieldNames match {
       case Seq(_) if isWrapped =>
         unwrapValidationStatus(firstFieldGenericType)
-      case Seq(_) if isOption =>
+      case Seq(_) if isOption || isSeq =>
         // remove one layer of parameterization only
         getParameterizedInnerType(firstFieldGenericType).asInstanceOf[Class[_]]
       case Seq(_) =>
         // no parameterization
         firstFieldClass
-      case Seq(_, tail@_*) if isOption =>
+      case Seq(_, tail@_*) if isOption || isSeq =>
         getValidationTypeFromCaseClass(unwrapOptionType(firstFieldGenericType), tail)
       case Seq(_, tail@_*) if isWrapped =>
         getValidationTypeFromCaseClass(unwrapValidationStatus(firstFieldGenericType), tail)
