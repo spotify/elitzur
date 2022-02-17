@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package com.spotify.elitzur.converters.avro.qaas
+package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.validators.{BaseCompanion, BaseValidationType, Validator}
 

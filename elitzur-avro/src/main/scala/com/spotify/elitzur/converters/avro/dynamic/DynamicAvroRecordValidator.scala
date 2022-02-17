@@ -15,10 +15,10 @@
  * under the License.
  */
 
-package com.spotify.elitzur.converters.avro.qaas
+package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.qaas.utils.NoopAvroObjWrapper
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
 import org.apache.avro.generic.GenericRecord
 
@@ -30,10 +30,7 @@ case class QaasAvroFieldValidator(
   val label: String = s"$avroPathStr:${qaasValidationCompanion.validatorIdentifier}"
 
   def getValidationClassWithData(avroRecord: GenericRecord): Any = {
-    val avroFn = AvroObjMapper.extract(this.avroPathStr, avroRecord.getSchema)
-    def combineFns(fns: List[AvroRecursiveDataHolder]): Any => Any =
-      ((fns).map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g).get.fn
-    val fn = combineFns(avroFn)
+    val fn = AvroObjMapper.getAvroFun(this.avroPathStr, avroRecord.getSchema)
     qaasValidationCompanion.validatorCheckParser(fn(avroRecord))
   }
 

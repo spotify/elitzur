@@ -17,7 +17,7 @@
 
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.qaas.{
+import com.spotify.elitzur.converters.avro.dynamic.{
   QaasAvroRecordValidator,
   QaasValidationCompanion,
   QaasValidationCompanionImplicits

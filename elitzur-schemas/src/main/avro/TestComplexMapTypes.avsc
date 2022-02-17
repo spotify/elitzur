@@ -1,0 +1,30 @@
+{
+  "name": "TestComplexMapTypes",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name": "innerMapRoot",
+      "type": {
+        "type": "map",
+        "values": "string"
+      }
+    },
+    {
+      "name": "innerMapRootWithGenericRecord",
+      "type": {
+        "type": "map",
+        "values": {
+          "name": "MapValueGenericRecord",
+          "type": "record",
+          "fields": [
+            {
+              "name": "trackId",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

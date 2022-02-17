@@ -17,88 +17,57 @@
 
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.qaas.{AvroObjMapper, AvroRecursiveDataHolder}
-import com.spotify.elitzur.converters.avro.qaas.utils.NoopAvroObjWrapper
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.schemas.TestComplexArrayTypes
+import helpers.SampleAvroRecords.testComplexArrayTypes
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import collection.JavaConverters._
+
 class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
-
-  import helpers.SampleAvroRecords._
-  import collection.JavaConverters._
-
   val testArrayRecord: TestComplexArrayTypes = testComplexArrayTypes
-  def combineFns(fns: List[AvroRecursiveDataHolder]): Any => Any =
-    ((fns).map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g).get.fn
 
   it should "extract generic records in an array" in {
-
     // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
     // Output: [{"userId": "one"}, {"userId": "two"}]
-    val fns = AvroObjMapper.extract("innerArrayRoot", testArrayRecord.getSchema)
-    val fn = combineFns(fns)
+    val fn = AvroObjMapper.getAvroFun("innerArrayRoot[]", testArrayRecord.getSchema)
 
     fn(testArrayRecord) should be (testArrayRecord.getInnerArrayRoot)
   }
 
   it should "extract a field from generic records in an array" in {
-
     // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
     // Output: ["one", "two"]
-    val fns = AvroObjMapper.extract("innerArrayRoot[].userId",
-      testArrayRecord.getSchema)
-    val fn = combineFns(fns)
+    val fn = AvroObjMapper.getAvroFun("innerArrayRoot[].userId", testArrayRecord.getSchema)
 
     fn(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getUserId).asJava)
   }
 
   it should "extract a field from nested generic records in an array" in {
-
     // Input: {"innerArrayRoot": [
     //    {"innerArrayInsideRecord": "deepNestedRecord": {"recordId": -1}}"},
     //    {"innerArrayInsideRecord": "deepNestedRecord": {"recordId": -5}}"}
     //    ]}
     // Output: [-1, -5]
-    val fns = AvroObjMapper.extract(
+    val fn = AvroObjMapper.getAvroFun(
       "innerArrayRoot[].deepNestedRecord.recordId", testArrayRecord.getSchema)
-    val fn = combineFns(fns)
 
     fn(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getDeepNestedRecord.getRecordId).asJava)
   }
 
-  it should "extract an array within an array" in {
-
-    // Input: {"innerArrayRoot": [
-    //    {"innerArrayInsideRecord": [1, 2]},
-    //    {"innerArrayInsideRecord": [3, 4]}
-    //    ]}
-    // Output: [[1, 2], [3, 4]]
-
-    val fns = AvroObjMapper.extract(
-      "innerArrayRoot[].innerArrayInsideRecord", testArrayRecord.getSchema)
-    val fn = combineFns(fns)
-
-    fn(testArrayRecord) should be (
-      testArrayRecord.getInnerArrayRoot.asScala.map(_.getInnerArrayInsideRecord).asJava)
-  }
-
   it should "flatten the resulting array" in {
-
     // Input: {"innerArrayRoot": [
     //    {"innerArrayInsideRecord": [1, 2]},
     //    {"innerArrayInsideRecord": [3, 4]}
     //    ]}
     // Output: [[1, 2, 3, 4]]
-
-    val fns = AvroObjMapper.extract(
+    val fn = AvroObjMapper.getAvroFun(
       "innerArrayRoot[].innerArrayInsideRecord[]", testArrayRecord.getSchema)
-    val fn = combineFns(fns)
 
     fn(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.flatMap(_.getInnerArrayInsideRecord.asScala).asJava)
   }
-
 }

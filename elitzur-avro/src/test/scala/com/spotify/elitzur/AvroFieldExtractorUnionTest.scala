@@ -17,29 +17,19 @@
 
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.qaas.utils.NoopAvroObjWrapper
-import com.spotify.elitzur.converters.avro.qaas.{ AvroObjMapper, AvroRecursiveDataHolder}
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.schemas.{InnerComplexType, TestComplexSchemaTypes}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
-  def combineFns(fns: List[AvroRecursiveDataHolder]): Any => Any =
-    ((fns).map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g).get.fn
+  val fn = AvroObjMapper.getAvroFun("optRecord.optString", TestComplexSchemaTypes.SCHEMA$)
 
   it should "extract a null from an Union schema type v2" in {
     // Input: {"optRecord": null}
     // Output: null
     val testNullRecord = TestComplexSchemaTypes.newBuilder().setOptRecord(null).build
-    val avroPath = "optRecord.optString"
 
-    val fns = AvroObjMapper.extract(avroPath, testNullRecord.getSchema)
-    val fn = combineFns(fns)
-
-    //    val expectedFns: List[OperationBase] = List[OperationBase](
-    //      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
-    //
-    //    fns.map(_.ops) should be (expectedFns)
     fn(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
@@ -48,15 +38,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     // Output: null
     val testInnerNullRecord = TestComplexSchemaTypes.newBuilder()
       .setOptRecord(InnerComplexType.newBuilder().setOptString(null).build).build
-    val avroPath = "optRecord.optString"
 
-    val fns = AvroObjMapper.extract(avroPath, testInnerNullRecord.getSchema)
-    val fn = combineFns(fns)
-
-    //    val expectedFns: List[OperationBase] = List[OperationBase](
-    //      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
-    //
-    //    fns.map(_.ops) should be (expectedFns)
     fn(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
 
@@ -65,15 +47,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     // Output: "abc"
     val testInnerNonNullRecord = TestComplexSchemaTypes.newBuilder()
       .setOptRecord(InnerComplexType.newBuilder().setOptString("abc").build).build
-    val avroPath = "optRecord.optString"
 
-    val fns = AvroObjMapper.extract(avroPath, testInnerNonNullRecord.getSchema)
-    val fn = combineFns(fns)
-
-    //    val expectedFns: List[OperationBase] = List[OperationBase](
-    //      GenericRecordOperation(0), UnionNullOperation(GenericRecordOperation(0)))
-    //
-    //    fns.map(_.ops) should be (expectedFns)
     fn(testInnerNonNullRecord) should be (testInnerNonNullRecord.getOptRecord.getOptString)
   }
 }

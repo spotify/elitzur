@@ -17,52 +17,31 @@
 
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.qaas.{AvroObjMapper, AvroRecursiveDataHolder}
-import com.spotify.elitzur.converters.avro.qaas.utils.NoopAvroObjWrapper
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
+import helpers.SampleAvroRecords._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
-  import helpers.SampleAvroRecords._
-
-  def combineFns(fns: List[AvroRecursiveDataHolder]): Any => Any =
-    (fns.map(_.ops) :+ NoopAvroObjWrapper()).reduceLeftOption((f, g) => f + g).get.fn
 
   it should "extract a primitive at the record root level" in {
     val testSimpleAvroRecord = innerNestedSample()
-    val fn = combineFns(
-      AvroObjMapper.extract("userId", testSimpleAvroRecord.getSchema)
-    )
+    val fn = AvroObjMapper.getAvroFun("userId", testSimpleAvroRecord.getSchema)
+
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getUserId)
   }
 
   it should "extract an array at the record root level" in {
     val testSimpleAvroRecord = testAvroRecord(2)
-    val fn = combineFns(
-      AvroObjMapper.extract("arrayLongs", testSimpleAvroRecord.getSchema)
-    )
+    val fn = AvroObjMapper.getAvroFun("arrayLongs[]", testSimpleAvroRecord.getSchema)
+
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getArrayLongs)
   }
 
   it should "extract a nested record" in {
     val testSimpleAvroRecord = testAvroRecord(2)
-    val avroPath = "innerOpt.userId"
+    val fn = AvroObjMapper.getAvroFun("innerOpt.userId", testSimpleAvroRecord.getSchema)
 
-    val fns = AvroObjMapper.extract(avroPath, testSimpleAvroRecord.getSchema)
-    val fn = combineFns(fns)
-
-    //    fns.map(_.ops) should be (List(GenericRecordOperation(3), GenericRecordOperation(0)))
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInnerOpt.getUserId)
   }
-
-    it should "extract complex case" in {
-
-      val testRecord = testAvroRecord(2)
-      val fns = AvroObjMapper.extract(
-          "arrayInnerNested[].innerNested.arrayInnerNested[].countryCode", testRecord.getSchema)
-      val fn = combineFns(fns)
-
-      val whatisthis = fn(testRecord)
-      whatisthis
-    }
 }
