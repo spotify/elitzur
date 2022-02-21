@@ -19,17 +19,6 @@ case class NullableFilter(op: BaseFilter) extends BaseFilter {
   override def fn: Any => Any = (o: Any) => if (o == null) o else op.fn(o)
 }
 
-case class MapFilter(idx: Int, mapKey: Option[String]) extends BaseFilter {
-  override def fn: Any => Any = (o: Any) => {
-    val innerAvroObj = o.asInstanceOf[GenericRecord].get(idx)
-    if (mapKey.isDefined) {
-      innerAvroObj.asInstanceOf[ju.Map[CharSequence, Any]].get(mapKey.get)
-    } else {
-      innerAvroObj.asInstanceOf[ju.Map[CharSequence, Any]]
-    }
-  }
-}
-
 case class ArrayFilter(idx: Int, innerFn: Any => Any, flatten: Boolean)
   extends BaseFilter {
   override def fn: Any => Any = (o: Any) => {
