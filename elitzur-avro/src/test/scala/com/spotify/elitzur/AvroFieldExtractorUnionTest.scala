@@ -23,7 +23,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
-  val fn = AvroObjMapper.getAvroFun("optRecord.optString", TestComplexSchemaTypes.SCHEMA$)
+  val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestComplexSchemaTypes.SCHEMA$)
 
   it should "extract a null from an Union schema type v2" in {
     // Input: {"optRecord": null}

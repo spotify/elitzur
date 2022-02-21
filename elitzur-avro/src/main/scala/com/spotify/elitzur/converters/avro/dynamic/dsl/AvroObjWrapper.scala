@@ -3,23 +3,23 @@ package com.spotify.elitzur.converters.avro.dynamic.dsl
 import org.apache.avro.generic.GenericRecord
 import java.{util => ju}
 
-trait BaseOperator {
+trait BaseFilter {
   def fn: Any => Any
 }
 
-case class NoopOperator() extends BaseOperator {
+case class NoopFilter() extends BaseFilter {
   def fn: Any => Any = (o: Any) => o
 }
 
-case class GenericRecordOperator(idx: Int) extends BaseOperator {
+case class GenericRecordFilter(idx: Int) extends BaseFilter {
   override def fn: Any => Any = (o: Any) => o.asInstanceOf[GenericRecord].get(idx)
 }
 
-case class NullableOperator(op: BaseOperator) extends BaseOperator {
+case class NullableFilter(op: BaseFilter) extends BaseFilter {
   override def fn: Any => Any = (o: Any) => if (o == null) o else op.fn(o)
 }
 
-case class MapOperator(idx: Int, mapKey: Option[String]) extends BaseOperator {
+case class MapFilter(idx: Int, mapKey: Option[String]) extends BaseFilter {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(idx)
     if (mapKey.isDefined) {
@@ -30,12 +30,12 @@ case class MapOperator(idx: Int, mapKey: Option[String]) extends BaseOperator {
   }
 }
 
-case class ArrayOperator(idx: Int, ops: List[BaseOperator], flatten: Boolean)
-  extends BaseOperator {
+case class ArrayFilter(idx: Int, innerFn: Any => Any, flatten: Boolean)
+  extends BaseFilter {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(idx)
     val res = new ju.ArrayList[Any]
-    innerAvroObj.asInstanceOf[ju.List[Any]].forEach(elem => res.add(composedFn.get(elem)))
+    innerAvroObj.asInstanceOf[ju.List[Any]].forEach(elem => res.add(innerFn(elem)))
     if (flatten) { flattenArray(res) } else { res }
   }
 
@@ -44,6 +44,4 @@ case class ArrayOperator(idx: Int, ops: List[BaseOperator], flatten: Boolean)
     list.forEach(elem => elem.asInstanceOf[ju.ArrayList[Any]].forEach( x => flattenRes.add(x) ))
     flattenRes
   }
-
-  private val composedFn: Option[Any => Any] = ops.map(_.fn).reduceLeftOption((f, g) => f andThen g)
 }
