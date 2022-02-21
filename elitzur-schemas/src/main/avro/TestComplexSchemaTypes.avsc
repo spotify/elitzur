@@ -15,6 +15,11 @@
               "name": "optString",
               "type": ["null", "string"],
               "default": null
+            },
+            {
+              "name": "nonOptString",
+              "type": "string",
+              "default": "default string"
             }
           ]
         }

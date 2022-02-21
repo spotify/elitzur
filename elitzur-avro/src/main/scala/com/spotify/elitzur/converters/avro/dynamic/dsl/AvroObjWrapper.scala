@@ -11,12 +11,15 @@ case class NoopFilter() extends BaseFilter {
   def fn: Any => Any = (o: Any) => o
 }
 
-case class GenericRecordFilter(idx: Int) extends BaseFilter {
+case class IndexFilter(idx: Int) extends BaseFilter {
   override def fn: Any => Any = (o: Any) => o.asInstanceOf[GenericRecord].get(idx)
 }
 
-case class NullableFilter(op: BaseFilter) extends BaseFilter {
-  override def fn: Any => Any = (o: Any) => if (o == null) o else op.fn(o)
+case class NullableFilter(idx: Int, innerFn: Any => Any) extends BaseFilter {
+  override def fn: Any => Any = (o: Any) => {
+    val innerAvroObj = o.asInstanceOf[GenericRecord].get(idx)
+    if (innerAvroObj == null) null else innerFn(o)
+  }
 }
 
 case class ArrayFilter(idx: Int, innerFn: Any => Any, flatten: Boolean)

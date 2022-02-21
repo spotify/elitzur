@@ -23,9 +23,15 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
-  val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestComplexSchemaTypes.SCHEMA$)
+  final val originalSchema = TestComplexSchemaTypes.SCHEMA$
+  final val originalSchema2 = TestComplexSchemaTypes.SCHEMA$
+  val fn = AvroObjMapper.getAvroFun(".optRecord.optString", originalSchema)
+  val fnNonNull = {
+    AvroObjMapper.getAvroFun(".optRecord.nonOptString", originalSchema2)
+  }
+  val abc = 1
 
-  it should "extract a null from an Union schema type v2" in {
+  it should "extract a null from an Union schema type" in {
     // Input: {"optRecord": null}
     // Output: null
     val testNullRecord = TestComplexSchemaTypes.newBuilder().setOptRecord(null).build
@@ -33,7 +39,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     fn(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
-  it should "extract a null from a nested Union Avro schema type v2" in {
+  it should "extract a null from a nested Union Avro schema type" in {
     // Input: {"optRecord": {"optString": null}}
     // Output: null
     val testInnerNullRecord = TestComplexSchemaTypes.newBuilder()
@@ -42,7 +48,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     fn(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
 
-  it should "extract a primitive from a Union Avro schema type v2" in {
+  it should "extract a primitive from a Union Avro schema type" in {
     // Input: {"optRecord": {"optString": "abc"}}
     // Output: "abc"
     val testInnerNonNullRecord = TestComplexSchemaTypes.newBuilder()
@@ -50,4 +56,13 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
 
     fn(testInnerNonNullRecord) should be (testInnerNonNullRecord.getOptRecord.getOptString)
   }
+
+  it should "return null if child schema is non-nullable" in {
+    // Input: {"optRecord": null}
+    // Output: "null"
+    val testNullRecord = TestComplexSchemaTypes.newBuilder().setOptRecord(null).build
+
+    fnNonNull(testNullRecord) should be (testNullRecord.getOptRecord)
+  }
+
 }
