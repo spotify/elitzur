@@ -112,13 +112,13 @@ class NullableFilterLogic(
   private def recursiveInnerOperation(
     schema: Schema, remainingField: Option[String], firstFilter: AvroOperatorsHolder, pos: Int
   ): (Any => Any, Option[String]) = {
-    if (remainingField.isDefined) {
-      val recursiveResult = AvroObjMapper.getAvroOperators(remainingField.get, schema)
+    if (firstFilter.rest.isDefined) {
+      val recursiveResult = AvroObjMapper.getAvroOperators(firstFilter.rest.get, schema)
       val innerOps = AvroObjMapper.combineFns((firstFilter +: recursiveResult).map(_.ops))
       val remainingPath = recursiveResult.lastOption.flatMap(_.rest)
       (innerOps, remainingPath)
     } else {
-      (IndexFilter(pos).fn, None)
+      (firstFilter.ops.fn, None)
     }
   }
 }

@@ -18,15 +18,18 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.schemas.{InnerComplexType, TestComplexSchemaTypes}
+import com.spotify.elitzur.schemas.{InnerComplexType, InnerNestedType, TestComplexSchemaTypes}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import collection.JavaConverters._
 
 class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
   val fn =
     AvroObjMapper.getAvroFun(".optRecord.optString", TestComplexSchemaTypes.SCHEMA$)
   val fnNonNull =
     AvroObjMapper.getAvroFun(".optRecord.nonOptString", TestComplexSchemaTypes.SCHEMA$)
+  val fnArrayNull =
+    AvroObjMapper.getAvroFun(".optRecord.optRepeatedArray.userId", TestComplexSchemaTypes.SCHEMA$)
 
   it should "extract a null from an Union schema type" in {
     // Input: {"optRecord": null}
@@ -40,7 +43,12 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     // Input: {"optRecord": {"optString": null}}
     // Output: null
     val testInnerNullRecord = TestComplexSchemaTypes.newBuilder()
-      .setOptRecord(InnerComplexType.newBuilder().setOptString(null).build).build
+      .setOptRecord(
+        InnerComplexType.newBuilder()
+          .setOptString(null)
+          .setOptRepeatedArray(List(InnerNestedType.newBuilder().setUserId("a").setCountryCode("b")
+            .setPlayCount(1L).build()).asJava).build()
+      ).build
 
     fn(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
@@ -49,7 +57,12 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     // Input: {"optRecord": {"optString": "abc"}}
     // Output: "abc"
     val testInnerNonNullRecord = TestComplexSchemaTypes.newBuilder()
-      .setOptRecord(InnerComplexType.newBuilder().setOptString("abc").build).build
+      .setOptRecord(
+        InnerComplexType.newBuilder()
+          .setOptString("abc")
+          .setOptRepeatedArray(List(InnerNestedType.newBuilder().setUserId("a").setCountryCode("b")
+            .setPlayCount(1L).build()).asJava).build()
+      ).build
 
     fn(testInnerNonNullRecord) should be (testInnerNonNullRecord.getOptRecord.getOptString)
   }
@@ -60,6 +73,34 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     val testNullRecord = TestComplexSchemaTypes.newBuilder().setOptRecord(null).build
 
     fnNonNull(testNullRecord) should be (testNullRecord.getOptRecord)
+  }
+
+  it should "return array element if array is not null" in {
+    // Input: {"optRecord": {"optRepeatedArray": [{"userId": "a", "countryCode": "b"}]}}
+    // Output: "a"
+    val testInnerNonNullRecord = TestComplexSchemaTypes.newBuilder()
+      .setOptRecord(
+        InnerComplexType.newBuilder()
+          .setOptString("abc")
+          .setOptRepeatedArray(List(InnerNestedType.newBuilder().setUserId("a").setCountryCode("b")
+            .setPlayCount(1L).build()).asJava).build()
+      ).build
+
+    fnArrayNull(testInnerNonNullRecord) should be (
+      testInnerNonNullRecord.getOptRecord.getOptRepeatedArray.asScala.map(_.getUserId).asJava)
+  }
+
+  it should "return null if array null" in {
+    // Input: {"optRecord": {"optRepeatedArray": null}}
+    // Output: null
+    val testInnerNullRecord = TestComplexSchemaTypes.newBuilder()
+      .setOptRecord(
+        InnerComplexType.newBuilder()
+          .setOptString("abc")
+          .setOptRepeatedArray(null).build()).build
+
+    fnArrayNull(testInnerNullRecord) should be (
+      testInnerNullRecord.getOptRecord.getOptRepeatedArray)
   }
 
 }

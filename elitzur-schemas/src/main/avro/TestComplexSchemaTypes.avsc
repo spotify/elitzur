@@ -20,6 +20,13 @@
               "name": "nonOptString",
               "type": "string",
               "default": "default string"
+            },
+            {
+              "name": "optRepeatedArray",
+              "type": ["null", {
+                "type": "array",
+                "items": "com.spotify.elitzur.schemas.InnerNestedType"
+              }]
             }
           ]
         }
