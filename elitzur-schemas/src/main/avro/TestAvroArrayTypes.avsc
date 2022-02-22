@@ -4,31 +4,6 @@
   "type": "record",
   "fields": [
     {
-      "name": "userAge",
-      "type": "long",
-      "doc": "{validationType: age}"
-    },
-    {
-      "name": "userFloat",
-      "type": "float",
-      "doc": "floating away on the clouds of google"
-    },
-    {
-      "name": "userLong",
-      "type": "long",
-      "doc": "{validationType: nonNegativeLong}"
-    },
-    {
-      "name": "innerOpt",
-      "type": "com.spotify.elitzur.schemas.InnerNestedType",
-      "default": null
-    },
-    {
-      "name": "innerOptNull",
-      "type": ["null", "com.spotify.elitzur.schemas.InnerNestedType"],
-      "default": null
-    },
-    {
       "name":"arrayLongs",
       "type":{
         "type": "array",
@@ -36,10 +11,37 @@
       }
     },
     {
-      "name":"arrayInnerNested",
-      "type":{
+      "name": "innerArrayRoot",
+      "type": {
         "type": "array",
-        "items": "com.spotify.elitzur.schemas.InnerNestedWithArrayFieldType"
+        "items": {
+          "name": "innerArrayRecord",
+          "type": "record",
+          "fields": [
+            {
+              "name": "innerArrayInsideRecord",
+              "type": {
+                "type": "array",
+                "items": "long"
+              }
+            },
+            {
+              "name": "userId",
+              "type": "string"
+            },
+            {
+              "name": "deepNestedRecord",
+              "type": {
+                "type": "record",
+                "name": "deepNestedRecord",
+                "fields": [ {
+                  "name": "recordId",
+                  "type": "long"
+                } ]
+              }
+            }
+          ]
+        }
       }
     }
   ]

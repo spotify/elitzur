@@ -1,5 +1,5 @@
 {
-  "name": "TestComplexSchemaTypes",
+  "name": "TestAvroUnionTypes",
   "namespace": "com.spotify.elitzur.schemas",
   "type": "record",
   "fields": [

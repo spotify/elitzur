@@ -76,8 +76,8 @@ class DynamicRecordValidatorTest extends AnyFlatSpec with Matchers {
   it should "process beginning to end" in {
 
     val avroFieldWithValidation: Array[String] = Array(
-      "innerOpt.playCount:NonNegativeLong",
-      "innerOpt.userId:CountryCode"
+      ".inner.playCount:NonNegativeLong",
+      ".inner.userId:CountryCode"
     )
 
     implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
@@ -86,7 +86,7 @@ class DynamicRecordValidatorTest extends AnyFlatSpec with Matchers {
 
     val tester = new QaasAvroRecordValidator(avroFieldWithValidation, qaasValidationCompanionMap)
 
-    tester.validateRecord(testAvroRecord(2))
+    tester.validateRecord(testAvroTypes)
 
     val thisMetricType = tester.validationInputs.headOption.get
 

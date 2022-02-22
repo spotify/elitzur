@@ -18,15 +18,15 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.schemas.TestComplexArrayTypes
-import helpers.SampleAvroRecords.testComplexArrayTypes
+import com.spotify.elitzur.schemas.TestAvroArrayTypes
+import helpers.SampleAvroRecords.testAvroArrayTypes
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import collection.JavaConverters._
 
 class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
-  val testArrayRecord: TestComplexArrayTypes = testComplexArrayTypes
+  val testArrayRecord: TestAvroArrayTypes = testAvroArrayTypes
 
   it should "extract generic records in an array" in {
     // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
@@ -63,11 +63,24 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
     //    {"innerArrayInsideRecord": [1, 2]},
     //    {"innerArrayInsideRecord": [3, 4]}
     //    ]}
-    // Output: [[1, 2, 3, 4]]
+    // Output: [1, 2, 3, 4]
     val fn = AvroObjMapper.getAvroFun(
       ".innerArrayRoot[].innerArrayInsideRecord[]", testArrayRecord.getSchema)
 
     fn(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.flatMap(_.getInnerArrayInsideRecord.asScala).asJava)
+  }
+
+  it should "not flatten the resulting array" in {
+    // Input: {"innerArrayRoot": [
+    //    {"innerArrayInsideRecord": [1, 2]},
+    //    {"innerArrayInsideRecord": [3, 4]}
+    //    ]}
+    // Output: [[1, 2], [3, 4]]
+    val fn = AvroObjMapper.getAvroFun(
+      ".innerArrayRoot[].innerArrayInsideRecord", testArrayRecord.getSchema)
+
+    fn(testArrayRecord) should be(
+      testArrayRecord.getInnerArrayRoot.asScala.map(_.getInnerArrayInsideRecord).asJava)
   }
 }
