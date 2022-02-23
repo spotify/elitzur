@@ -9,4 +9,10 @@ object AvroMapperException {
   final val UNSUPPORTED_MAP_SCHEMA =
     "Map schema not supported. Please use Magnolia version of Elitzur."
 
+  final val MISSING_ARRAY_TOKEN =
+    """
+      |Missing `[]` for an array field. Appending `[]` is required for all array fields except
+      |in the case where the last field in the arg is an array.
+      |""".stripMargin
+
 }

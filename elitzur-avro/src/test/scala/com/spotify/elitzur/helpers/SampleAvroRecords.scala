@@ -45,11 +45,9 @@ object SampleAvroRecords {
       .amend(innerArrayInsideRecord)(_.setInnerArrayInsideRecord)
     def innerArrayRoot: Gen[util.List[innerArrayRecord]] =
       Gen.listOfN(2, innerArrayRecord).map(_.asJava)
-
     avroOf[TestAvroArrayTypes]
       .amend(innerArrayRoot)(_.setInnerArrayRoot)
       .sample
       .get
-
   }
 }

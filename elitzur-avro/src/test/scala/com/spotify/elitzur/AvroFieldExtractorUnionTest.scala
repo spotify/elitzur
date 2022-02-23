@@ -77,7 +77,8 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
   it should "return the elements of an array if array is not null" in {
     // Input: {"optRecord": {"optRepeatedArray": [{"userId": "a", "countryCode": "US"}]}}
     // Output: "a"
-    val fnArrayNull = AvroObjMapper.getAvroFun(".optRecord.optRepeatedArray.userId", TestAvroUnionTypes.SCHEMA$)
+    val fnArrayNull = AvroObjMapper.getAvroFun(".optRecord.optRepeatedArray[].userId",
+      TestAvroUnionTypes.SCHEMA$)
     val testInnerNonNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()
@@ -92,7 +93,8 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
   it should "return null if array is null" in {
     // Input: {"optRecord": {"optRepeatedArray": null}}
     // Output: null
-    val fnArrayNull = AvroObjMapper.getAvroFun(".optRecord.optRepeatedArray.userId", TestAvroUnionTypes.SCHEMA$)
+    val fnArrayNull = AvroObjMapper.getAvroFun(".optRecord.optRepeatedArray[].userId",
+      TestAvroUnionTypes.SCHEMA$)
     val testInnerNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()

@@ -29,22 +29,22 @@ object AvroObjMapper {
 
   def getAvroFun(avroFieldPath: String, schema: Schema): Any => Any = {
     if (!mapToAvroFun.contains(avroFieldPath)) {
-      val avroOperators = getAvroOperators(avroFieldPath, schema).map(_.ops)
+      val avroOperators = getAvroFilters(avroFieldPath, schema).map(_.ops)
       mapToAvroFun += (avroFieldPath -> combineFns(avroOperators))
     }
     mapToAvroFun(avroFieldPath)
   }
 
   @tailrec
-  private[dsl] def getAvroOperators(
+  private[dsl] def getAvroFilters(
     path: String,
     avroSchema: Schema,
     accAvroOperators: List[AvroOperatorsHolder] = List.empty[AvroOperatorsHolder]
   ): List[AvroOperatorsHolder] = {
-    val thisAvroOp = AvroOperatorUtil.mapToFilters(path, avroSchema)
+    val thisAvroOp = AvroFilterUtil.mapToFilters(path, avroSchema)
     val appendedAvroOp = accAvroOperators :+ thisAvroOp
     thisAvroOp.rest match {
-      case Some(remainingPath) => getAvroOperators(remainingPath, thisAvroOp.schema, appendedAvroOp)
+      case Some(remainingPath) => getAvroFilters(remainingPath, thisAvroOp.schema, appendedAvroOp)
       case _ => appendedAvroOp
     }
   }
@@ -53,7 +53,7 @@ object AvroObjMapper {
     fns.map(_.fn).reduceLeftOption((f, g) => f andThen g).getOrElse(NoopFilter().fn)
 }
 
-object AvroOperatorUtil {
+object AvroFilterUtil {
   private val PRIMITIVES: ju.EnumSet[Schema.Type] =
     ju.EnumSet.complementOf(ju.EnumSet.of(Schema.Type.ARRAY, Schema.Type.MAP, Schema.Type.UNION))
 
@@ -66,14 +66,14 @@ object AvroOperatorUtil {
     AvroOperatorsHolder = {
       fieldSchema.getType match {
         case _schema if PRIMITIVES.contains(_schema) =>
-          new IndexFilterLogic(fieldSchema, fieldPos, rest).apply
+          new IndexFilterLogic(fieldSchema, fieldPos, rest).avroOp
         case Schema.Type.ARRAY =>
-          new ArrayFilterLogic(fieldSchema.getElementType, fieldPos, rest, op).apply
+          new ArrayFilterLogic(fieldSchema.getElementType, fieldPos, rest, op).avroOp
         case Schema.Type.UNION =>
           fieldSchema.getTypes.removeIf(_.getType == Schema.Type.NULL)
           val innerSchema = fieldSchema.getTypes.get(0)
-          val firstFilter = mapToFilters(innerSchema, fieldPos, op, rest)
-          new NullableFilterLogic(innerSchema, fieldPos, firstFilter).apply
+          val initFilter = mapToFilters(innerSchema, fieldPos, op, rest)
+          new NullableFilterLogic(innerSchema, fieldPos, initFilter).avroOp
         case Schema.Type.MAP => throw new InvalidDynamicFieldException(UNSUPPORTED_MAP_SCHEMA)
       }
     }
@@ -96,53 +96,3 @@ object AvroOperatorUtil {
 }
 
 case class AvroOperatorsHolder(ops: BaseFilter, schema: Schema, rest: Option[String])
-
-class IndexFilterLogic(schema: Schema, pos: Int, rest: Option[String]) {
-  val filter: IndexFilter = IndexFilter(pos)
-  def apply: AvroOperatorsHolder = AvroOperatorsHolder(filter, schema, rest)
-}
-
-class NullableFilterLogic(schema: Schema, pos: Int, firstFilter: AvroOperatorsHolder) {
-   val (innerOps, remainingPath) = recursiveInnerOperation(schema, firstFilter)
-
-  val filter: NullableFilter = NullableFilter(pos, innerOps)
-  def apply: AvroOperatorsHolder = AvroOperatorsHolder(filter, schema, remainingPath)
-
-  private def recursiveInnerOperation(
-    innerSchema: Schema, firstFilter: AvroOperatorsHolder): (Any => Any, Option[String]) = {
-    if (firstFilter.rest.isDefined) {
-      val recursiveResult = AvroObjMapper.getAvroOperators(firstFilter.rest.get, innerSchema)
-      val innerOps = AvroObjMapper.combineFns((firstFilter +: recursiveResult).map(_.ops))
-      val remainingPath = recursiveResult.lastOption.flatMap(_.rest)
-      (innerOps, remainingPath)
-    } else {
-      (firstFilter.ops.fn, None)
-    }
-  }
-}
-
-class ArrayFilterLogic(
-  arrayElemSchema: Schema, pos: Int, rest: Option[String], op: Option[String]) {
-  val (arrayInnerOps, flatten, remainingField, isEndArray) =
-    recursiveInnerOperation(arrayElemSchema, rest, op)
-
-  val filter: ArrayFilter = ArrayFilter(pos, arrayInnerOps, flatten, isEndArray)
-  def apply: AvroOperatorsHolder = AvroOperatorsHolder(filter, arrayElemSchema, remainingField)
-
-  private def recursiveInnerOperation(
-    innerSchema: Schema, remainingField: Option[String], opToken: Option[String]
-  ): (Any => Any, Boolean, Option[String], Boolean) = {
-    if (remainingField.isDefined) {
-      val recursiveResult = AvroObjMapper.getAvroOperators(remainingField.get, innerSchema)
-      // innerOps represents the list of operators to be applied to each element in an array
-      val innerOps = AvroObjMapper.combineFns(recursiveResult.map(_.ops))
-      // flattenFlag is true if one of the internal operation types is an array-based operation
-      val flattenFlag = recursiveResult.map(_.ops).exists(_.isInstanceOf[ArrayFilter])
-      // remainingPath represents the remaining user provided string to be traversed
-      val remainingPath = recursiveResult.lastOption.flatMap(_.rest)
-      (innerOps, flattenFlag, remainingPath, false)
-    } else {
-      (NoopFilter().fn, opToken.contains("[]"), None, true)
-    }
-  }
-}

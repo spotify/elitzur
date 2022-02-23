@@ -39,28 +39,22 @@ case class NullableFilter(idx: Int, innerFn: Any => Any) extends BaseFilter {
   }
 }
 
-case class ArrayFilter(idx: Int, innerFn: Any => Any, flatten: Boolean, isEndArray: Boolean)
+case class ArrayFilter(idx: Int, innerFn: Any => Any, flatten: Boolean, isLastArray: Boolean)
   extends BaseFilter {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(idx)
     val res = new ju.ArrayList[Any]
 
-    (flatten, isEndArray) match {
+    (flatten, isLastArray) match {
       case (true, true) | (false, false) =>
         innerAvroObj.asInstanceOf[ju.List[Any]].forEach(elem => res.add(innerFn(elem)))
         res
       case (true, false) =>
-        innerAvroObj.asInstanceOf[ju.List[Any]].forEach(elem => res.add(innerFn(elem)))
-        flattenArray(res)
-      case (false, true) =>
-        res.add(innerAvroObj)
+        innerAvroObj.asInstanceOf[ju.List[Any]].forEach(
+          elem => innerFn(elem).asInstanceOf[ju.List[Any]].forEach( x => res.add(x)))
         res
+      case (false, true) =>
+        innerAvroObj
     }
-  }
-
-  private def flattenArray(list: ju.List[Any]): ju.ArrayList[Any] = {
-    val flattenRes = new ju.ArrayList[Any]
-    list.forEach(elem => elem.asInstanceOf[ju.List[Any]].forEach( x => flattenRes.add(x) ))
-    flattenRes
   }
 }

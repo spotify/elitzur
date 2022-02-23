@@ -33,7 +33,7 @@ class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
 
   it should "extract an array at the record root level" in {
     val testSimpleAvroRecord = testAvroArrayTypes
-    val fn = AvroObjMapper.getAvroFun(".arrayLongs[]", testSimpleAvroRecord.getSchema)
+    val fn = AvroObjMapper.getAvroFun(".arrayLongs", testSimpleAvroRecord.getSchema)
 
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getArrayLongs)
   }
