@@ -17,6 +17,7 @@
 package com.spotify.elitzur.scio
 
 import com.spotify.elitzur.CountryCodeTesting
+import com.spotify.elitzur.scio.ElitzurMetrics.getValidationTypeFromCaseClass
 import com.spotify.elitzur.validators.ValidationStatus
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -40,6 +41,8 @@ class ElitzurMetricsTest extends AnyFlatSpec with PrivateMethodTester with Match
 
   case class HasMixedWrapping(outer: ValidationStatus[HasWrappedValidationTypes],
                               outerOption: ValidationStatus[Option[HasValidationTypes]])
+
+  case class RepeatedTest(repeated: List[CountryCodeTesting], nested: List[HasValidationTypes])
 
   "getValidationTypeFromCaseClass" should "return unqualified validation type name" in {
     val getValidationTypeFromCaseClass = PrivateMethod[String]('getValidationTypeFromCaseClass)
@@ -75,6 +78,18 @@ class ElitzurMetricsTest extends AnyFlatSpec with PrivateMethodTester with Match
   "getValidationTypeFromCaseClass" should
     "work for records where some inner fields are wrapped and some aren't" in {
     testGetValidationTypeFromCaseClass(classOf[HasMixedWrapping])
+  }
+
+  "getValidationTypeFromCaseClass" should "work for repeated fields" in {
+    val name = ElitzurMetrics
+      .getValidationTypeFromCaseClass(classOf[RepeatedTest], "repeated")
+    name shouldBe "CountryCodeTesting"
+  }
+
+  "getValidationTypeFromCaseClass" should "work for repeated records" in {
+    val name = ElitzurMetrics
+      .getValidationTypeFromCaseClass(classOf[RepeatedTest], "nested.inner")
+    name shouldBe "CountryCodeTesting"
   }
 }
 //scalastyle:on no.whitespace.before.left.bracket
