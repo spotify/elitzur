@@ -85,7 +85,7 @@ abstract class FieldValidator[A: ClassTag](implicit reporter: MetricsReporter)
   override def shouldValidate: Boolean = true
 }
 
-class IgnoreValidator[T: ClassTag](implicit reporter: MetricsReporter=null)
+class IgnoreValidator[T: ClassTag](implicit reporter: MetricsReporter)
     extends FieldValidator[T] {
 
   override def validationType: String = "None"
@@ -417,7 +417,8 @@ object Validator extends Serializable {
   private[validators] def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](
       builderFn: () => mutable.Builder[T, C[T]]
   )(
-      implicit toSeq: C[T] => IterableOnce[T],
+      implicit reporter: MetricsReporter,
+      toSeq: C[T] => IterableOnce[T],
       ev: ClassTag[C[T]]
   ): Validator[C[T]] = {
     if (implicitly[Validator[T]].shouldValidate) {
