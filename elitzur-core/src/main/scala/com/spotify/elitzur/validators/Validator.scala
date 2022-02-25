@@ -163,18 +163,21 @@ class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Bu
     var atLeastOneInvalid = false
     val v = implicitly[Validator[T]]
     val builder = builderFn()
+    val fullPath = if (v.isInstanceOf[FieldValidator[_]]) path else {
+      new JStringBuilder(path.length + 1).append(path).append(".").toString
+    }
+
     toSeq(a.forceGet).iterator.foreach(ele => {
       val res = if (v.isInstanceOf[FieldValidator[_]]) {
-        val c = config.fieldConfig(path)
+        val c = config.fieldConfig(fullPath)
         validateField(
-          v,
+          v.asInstanceOf[FieldValidator[T]],
           Unvalidated(ele),
           c,
           outermostClassName.get,
-          path)
+          fullPath)
       } else {
-        val nestedPath = new JStringBuilder(path.length + 1).append(path).append(".").toString
-        v.validateRecord(Unvalidated(ele), nestedPath, outermostClassName, config)
+        v.validateRecord(Unvalidated(ele), fullPath, outermostClassName, config)
       }
       if (!atLeastOneInvalid && res.isInvalid) {
         atLeastOneInvalid = true
@@ -286,7 +289,7 @@ object Validator extends Serializable {
           val o = if (accessor.validator.isInstanceOf[FieldValidator[_]]) {
             val fieldConf = config.fieldConfig(name)
             validateField(
-              accessor.validator,
+              accessor.validator.asInstanceOf[FieldValidator[Any]],
               Unvalidated(accessor.value),
               fieldConf,
               outermostClassName,
@@ -352,28 +355,29 @@ object Validator extends Serializable {
     }
   }
 
-  def validateField[A](validator: Validator[A],
-                    value: PreValidation[A],
-                    config: ValidationFieldConfig,
-                    outermostClassName: String,
-                    fieldName: String)
-                   (implicit reporter: MetricsReporter): PostValidation[A] = {
-    val fieldValidator = validator.asInstanceOf[FieldValidator[_]]
-    val v = validator.validateRecord(value)
-    val validationType = fieldValidator.validationType
+  // This logs metrics alongside validation. This is pulled out of the validation loop
+  // because it needs to be used both on record fields and validation types in Seqs
+  def validateField[T](validator: FieldValidator[T],
+                       value: PreValidation[T],
+                       config: ValidationFieldConfig,
+                       outermostClassName: String,
+                       fieldName: String)
+                       (implicit reporter: MetricsReporter): PostValidation[T] = {
+    val result = validator.validateRecord(value)
+    val validationType = validator.validationType
 
-    if (v.isValid) {
+    if (result.isValid) {
       if (config != NoCounter) {
         reporter.reportValid(
           outermostClassName,
           fieldName,
-          fieldValidator.validationType
+          validationType
         )
       }
-    } else if (v.isInvalid) {
+    } else if (result.isInvalid) {
       if (config == ThrowException) {
         throw new DataInvalidException(
-          s"Invalid value ${v.forceGet.toString} found for field $fieldName")
+          s"Invalid value ${result.forceGet.toString} found for field $fieldName")
       }
       if (config != NoCounter) {
         reporter.reportInvalid(
@@ -383,6 +387,6 @@ object Validator extends Serializable {
         )
       }
     }
-    v
+    result
   }
 }
