@@ -16,8 +16,9 @@
  */
 package com.spotify.elitzur.validators
 
-import java.lang.{StringBuilder => JStringBuilder}
+import com.spotify.elitzur.validators.Validator.validateField
 
+import java.lang.{StringBuilder => JStringBuilder}
 import com.spotify.elitzur.{DataInvalidException, IllegalValidationException, MetricsReporter}
 import magnolia._
 
@@ -151,7 +152,8 @@ private[elitzur] class OptionValidator[T: Validator] extends Validator[Option[T]
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
 private[elitzur]
 class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Builder[T, C[T]])
-                                                    (implicit toSeq: C[T] => IterableOnce[T])
+                                                    (implicit reporter: MetricsReporter,
+                                                     toSeq: C[T] => IterableOnce[T])
   extends Validator[C[T]] {
   override def validateRecord(a: PreValidation[C[T]],
                               path: String,
@@ -162,7 +164,18 @@ class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Bu
     val v = implicitly[Validator[T]]
     val builder = builderFn()
     toSeq(a.forceGet).iterator.foreach(ele => {
-      val res = v.validateRecord(Unvalidated(ele), path, outermostClassName, config)
+      val res = if (v.isInstanceOf[FieldValidator[_]]) {
+        val c = config.fieldConfig(path)
+        validateField(
+          v,
+          Unvalidated(ele),
+          c,
+          outermostClassName.get,
+          path)
+      } else {
+        val nestedPath = new JStringBuilder(path.length + 1).append(path).append(".").toString
+        v.validateRecord(Unvalidated(ele), nestedPath, outermostClassName, config)
+      }
       if (!atLeastOneInvalid && res.isInvalid) {
         atLeastOneInvalid = true
       }
@@ -177,8 +190,6 @@ class SeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Bu
   }
 
   override def shouldValidate: Boolean = implicitly[Validator[T]].shouldValidate
-  def innerValidationType: String =
-    implicitly[Validator[T]].asInstanceOf[FieldValidator[_]].validationType
 
 }
 
@@ -257,91 +268,71 @@ object Validator extends Serializable {
    */
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
   def validationLoop[T](validatorAccessors: Array[ValidatorAccessor[Any]],
-                     constructor: Seq[Any] => T,
-                     outermostClassName: String,
-                     path: String = "",
-                     config: ValidationRecordConfig = DefaultRecordConfig)
-                    (implicit reporter: MetricsReporter): PostValidation[T] = {
+                        constructor: Seq[Any] => T,
+                        outermostClassName: String,
+                        path: String = "",
+                        config: ValidationRecordConfig = DefaultRecordConfig)
+                       (implicit reporter: MetricsReporter): PostValidation[T] = {
     val cs = new Array[Any](validatorAccessors.length)
     var i = 0
     var atLeastOneValid = false
     var atLeastOneInvalid = false
-
     while (i < validatorAccessors.length) {
       val accessor = validatorAccessors(i)
       val v =
         if (!accessor.validator.isInstanceOf[IgnoreValidator[_]]) {
           val name = new JStringBuilder(path.length + accessor.label.length)
             .append(path).append(accessor.label).toString
-          val c = config.fieldConfig(name)
-          var o: PostValidation[Any] = null
-          var innerValidationType: String = null
-
-          if (accessor.validator.isInstanceOf[FieldValidator[_]]) {
-            o = accessor.validator.validateRecord(Unvalidated(accessor.value))
-            innerValidationType = accessor.validator.asInstanceOf[FieldValidator[_]].validationType
-          } else {
-            if (accessor.validator.isInstanceOf[SeqLikeValidator[_, Seq]]) {
-              innerValidationType =
-                accessor.validator.asInstanceOf[SeqLikeValidator[_, Seq]].innerValidationType
-            }
-
-            o = accessor.validator.validateRecord(
+          val o = if (accessor.validator.isInstanceOf[FieldValidator[_]]) {
+            val fieldConf = config.fieldConfig(name)
+            validateField(
+              accessor.validator,
               Unvalidated(accessor.value),
+              fieldConf,
+              outermostClassName,
+              name)
+          } else {
+            // SeqLikeValidator can contain either nested records or fields we want to validate
+            // we don't want to append a delimiter to leaf-field's path so we wait and branch the
+            // logic within SeqLikeValidator
+            val nextPath = if (accessor.validator.isInstanceOf[SeqLikeValidator[_, Seq]]) {
+              new JStringBuilder(path.length + accessor.label.length)
+                .append(path).append(accessor.label).toString
+            } else {
               new JStringBuilder(path.length + accessor.label.length + 1)
-                .append(path).append(accessor.label).append(".").toString,
+                .append(path).append(accessor.label).append(".").toString
+            }
+            accessor.validator.validateRecord(
+              Unvalidated(accessor.value),
+              nextPath,
               Some(outermostClassName),
-              config
-            )
-          }
+              config)
+            }
 
-          // o and v should be set by now
-          // Also do not register a counter if validationType is empty
-          if (o.isValid) {
-            // NOTE: This will only work for FieldValidator, SeqLikeValidator,
-            // and nested case classes too.
-            if (c != NoCounter && innerValidationType != null) {
-              reporter.reportValid(
-                outermostClassName,
-                name,
-                innerValidationType
-              )
+            if (o.isValid) {
+              atLeastOneValid = true
+            } else if (o.isInvalid) {
+              atLeastOneInvalid = true
             }
-            atLeastOneValid = true
-          } else if (o.isInvalid) {
-            atLeastOneInvalid = true
-            if (c == ThrowException) {
-              throw new DataInvalidException(
-                s"Invalid value ${o.forceGet.toString} found for field $path${accessor.label}")
-            }
-            if (c != NoCounter && innerValidationType != null) {
-              reporter.reportInvalid(
-                outermostClassName,
-                name,
-                innerValidationType
-              )
-            }
-          }
 
-          o.forceGet
-        } else {
-          accessor.value
+            o.forceGet
+          } else {
+            accessor.value
+          }
+          cs.update(i, v)
+          i = i + 1
         }
-      cs.update(i, v)
-      i = i + 1
+      val record = constructor(ArraySeq.unsafeWrapArray(cs))
+      if (atLeastOneInvalid){
+        Invalid(record)
+      }
+      else if (atLeastOneValid) {
+        Valid(record)
+      }
+      else {
+        IgnoreValidation(record)
+      }
     }
-    val record = constructor(ArraySeq.unsafeWrapArray(cs))
-
-    if (atLeastOneInvalid){
-      Invalid(record)
-    }
-    else if (atLeastOneValid) {
-      Valid(record)
-    }
-    else {
-      IgnoreValidation(record)
-    }
-  }
   //scalastyle:on method.length cyclomatic.complexity
 
   def fallback[T]: Validator[T] = macro ValidatorMacros.issueFallbackWarning[T]
@@ -350,7 +341,8 @@ object Validator extends Serializable {
 
   private[validators]
   def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](builderFn: () => mutable.Builder[T, C[T]])
-                                                        (implicit toSeq: C[T] => IterableOnce[T],
+                                                        (implicit reporter: MetricsReporter,
+                                                         toSeq: C[T] => IterableOnce[T],
                                                          ev: ClassTag[C[T]]): Validator[C[T]] = {
     if (implicitly[Validator[T]].shouldValidate) {
       new SeqLikeValidator[T, C](builderFn)
@@ -358,5 +350,39 @@ object Validator extends Serializable {
     else {
       new IgnoreValidator[C[T]]
     }
+  }
+
+  def validateField[A](validator: Validator[A],
+                    value: PreValidation[A],
+                    config: ValidationFieldConfig,
+                    outermostClassName: String,
+                    fieldName: String)
+                   (implicit reporter: MetricsReporter): PostValidation[A] = {
+    val fieldValidator = validator.asInstanceOf[FieldValidator[_]]
+    val v = validator.validateRecord(value)
+    val validationType = fieldValidator.validationType
+
+    if (v.isValid) {
+      if (config != NoCounter) {
+        reporter.reportValid(
+          outermostClassName,
+          fieldName,
+          fieldValidator.validationType
+        )
+      }
+    } else if (v.isInvalid) {
+      if (config == ThrowException) {
+        throw new DataInvalidException(
+          s"Invalid value ${v.forceGet.toString} found for field $fieldName")
+      }
+      if (config != NoCounter) {
+        reporter.reportInvalid(
+          outermostClassName,
+          fieldName,
+          validationType
+        )
+      }
+    }
+    v
   }
 }

@@ -133,11 +133,17 @@ class ValidatorDoFnTest extends PipelineSpec {
   "Validator SCollection" should "validate collection of Seq,Vector,List or Array " +
     "and set counters" in {
     JobTest[DummyPipeline.type ]
-      .counters(_.size shouldBe 5)
+      .counters(_.size shouldBe 6)
       .counter(
         ScioMetrics.counter(
           "com.spotify.elitzur.TestClasses.SeqTest",
           "t/CountryCodeTesting/ElitzurInvalid"
+        )
+      )(_ shouldBe 2)
+      .counter(
+        ScioMetrics.counter(
+          "com.spotify.elitzur.TestClasses.SeqTest",
+          "t/CountryCodeTesting/ElitzurValid"
         )
       )(_ shouldBe 1)
       .counter(
@@ -145,25 +151,25 @@ class ValidatorDoFnTest extends PipelineSpec {
           "com.spotify.elitzur.TestClasses.ListTest",
           "t/CountryCodeTesting/ElitzurValid"
         )
-      )(_ shouldBe 1)
+      )(_ shouldBe 2)
       .counter(
         ScioMetrics.counter(
           "com.spotify.elitzur.TestClasses.ArrayTest",
           "t/CountryCodeTesting/ElitzurInvalid"
         )
-      )(_ shouldBe 1)
+      )(_ shouldBe 2)
       .counter(
         ScioMetrics.counter(
           "com.spotify.elitzur.TestClasses.VectorTest",
           "t/CountryCodeTesting/ElitzurValid"
         )
-      )(_ shouldBe 1)
+      )(_ shouldBe 2)
       .counter(
         ScioMetrics.counter(
           "com.spotify.elitzur.TestClasses.NestedRecordSequence",
           "nested.t/CountryCodeTesting/ElitzurValid"
         )
-      )(_ shouldBe 1)
+      )(_ shouldBe 2)
       .run()
   }
 }
