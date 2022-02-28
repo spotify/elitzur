@@ -253,3 +253,4 @@ class Benchmarking {
     fiveNFiveVal.validateRecord(Unvalidated(fiveN5))
   }
 }
+//scalastyle:on magic.number

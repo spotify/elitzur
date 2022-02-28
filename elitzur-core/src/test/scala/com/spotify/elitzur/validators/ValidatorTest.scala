@@ -205,3 +205,4 @@ class ValidatorTest extends AnyFlatSpec with Matchers {
     ) shouldEqual 3
   }
 }
+//scalastyle:on magic.number
