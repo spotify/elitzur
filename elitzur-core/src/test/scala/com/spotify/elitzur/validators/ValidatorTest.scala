@@ -1,5 +1,6 @@
 package com.spotify.elitzur.validators
 
+import com.spotify.elitzur.validators.DynamicRecordValidatorTest.TestMetricsReporter
 import com.spotify.elitzur.{AgeTesting, CountryCodeTesting, MetricsReporter}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -28,21 +29,8 @@ class ValidatorTest extends AnyFlatSpec with Matchers {
     countryOpt = Some(CountryCodeTesting("SE"))
   )
 
-  implicit val testMetricsReporter: MetricsReporter = new MetricsReporter {
-    override def reportValid(
-        className: String,
-        fieldName: String,
-        validationTypeName: String
-    ): Unit = ()
-
-    override def reportInvalid(
-        className: String,
-        fieldName: String,
-        validationTypeName: String
-    ): Unit = ()
-  }
-
-  "Validator" should "validate record" in {
+  "Validator" should "validate valid record" in {
+    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
     val validator = Validator.gen[Outer]
     val result = validator.validateRecord(
       Unvalidated(
@@ -57,6 +45,162 @@ class ValidatorTest extends AnyFlatSpec with Matchers {
         )
       )
     )
-    result.isInvalid shouldBe false
+    result.isValid shouldBe true
+    val testMetrics = metricsReporter.asInstanceOf[TestMetricsReporter]
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "country",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "innerStatus.countryStatus",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "innerStatus.country",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "innerStatus.countryOpt",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "inner.countryStatus",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "inner.country",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "inner.countryOpt",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "age",
+      "AgeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "ageOpt",
+      "AgeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedAge",
+      "AgeTesting"
+    ) shouldEqual 2
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedInner.countryStatus",
+      "CountryCodeTesting"
+    ) shouldEqual 3
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedInner.country",
+      "CountryCodeTesting"
+    ) shouldEqual 3
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedInner.countryOpt",
+      "CountryCodeTesting"
+    ) shouldEqual 3
+  }
+
+  "Validator" should "validate invalid record" in {
+    implicit val metricsReporter: MetricsReporter = DynamicRecordValidatorTest.metricsReporter()
+    val validator = Validator.gen[Outer]
+    val result = validator.validateRecord(
+      Unvalidated(
+        Outer(
+          country = Unvalidated(CountryCodeTesting("FOO")),
+          innerStatus = Unvalidated(inner),
+          inner = inner,
+          age = AgeTesting(25L),
+          ageOpt = Some(AgeTesting(45L)),
+          repeatedAge = List(AgeTesting(50L), AgeTesting(1000L)),
+          repeatedInner = List(inner, inner, inner)
+        )
+      )
+    )
+    result.isValid shouldBe false
+    val testMetrics = metricsReporter.asInstanceOf[TestMetricsReporter]
+    testMetrics.getInvalid(
+      "com.spotify.elitzur.validators.Outer",
+      "country",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "innerStatus.countryStatus",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "innerStatus.country",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "innerStatus.countryOpt",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "inner.countryStatus",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "inner.country",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "inner.countryOpt",
+      "CountryCodeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "age",
+      "AgeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "ageOpt",
+      "AgeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedAge",
+      "AgeTesting"
+    ) shouldEqual 1
+    testMetrics.getInvalid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedAge",
+      "AgeTesting"
+    ) shouldEqual 1
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedInner.countryStatus",
+      "CountryCodeTesting"
+    ) shouldEqual 3
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedInner.country",
+      "CountryCodeTesting"
+    ) shouldEqual 3
+    testMetrics.getValid(
+      "com.spotify.elitzur.validators.Outer",
+      "repeatedInner.countryOpt",
+      "CountryCodeTesting"
+    ) shouldEqual 3
   }
 }
