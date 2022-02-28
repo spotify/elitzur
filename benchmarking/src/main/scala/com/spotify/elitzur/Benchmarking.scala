@@ -125,6 +125,7 @@ object CaseClassValidators {
   val fiveNFiveVal: Validator[FiveNestedFiveFields] = genFiveNestedFive()
 }
 
+//scalastyle:off magic.number
 object Fields {
   import CaseClassesToValidate._
 

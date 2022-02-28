@@ -21,6 +21,7 @@ case class Inner(
     countryOpt: Option[CountryCodeTesting]
 )
 
+//scalastyle:off magic.number
 class ValidatorTest extends AnyFlatSpec with Matchers {
 
   val inner = Inner(
