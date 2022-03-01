@@ -16,6 +16,8 @@
  */
 package com.spotify.elitzur.validators
 
+import com.spotify.elitzur.MetricsReporter
+
 import scala.reflect.ClassTag
 
 trait Implicits {
@@ -37,10 +39,10 @@ trait Implicits {
   implicit def wrappedValidator[T: Validator]: Validator[ValidationStatus[T]] = new WrappedValidator[T]
   implicit def optionValidator[T: Validator]: Validator[Option[T]] = new OptionValidator[T]
   implicit def dynamicTypeValidator[T <: DynamicValidationType[_, _, _]: ClassTag]: DynamicValidator[T] = new DynamicValidator[T]
-  implicit def seqValidator[T: Validator: ClassTag]: Validator[Seq[T]] = wrapSeqLikeValidator(() => Seq.newBuilder[T])
-  implicit def listValidator[T: Validator: ClassTag]: Validator[List[T]] = wrapSeqLikeValidator(() => List.newBuilder[T])
-  implicit def arrayValidator[T: Validator: ClassTag]: Validator[Array[T]] = wrapSeqLikeValidator(() => Array.newBuilder[T])
-  implicit def vectorValidator[T: Validator: ClassTag]: Validator[Vector[T]] = wrapSeqLikeValidator(() => Vector.newBuilder[T])
+  implicit def seqValidator[T: Validator: ClassTag](implicit reporter: MetricsReporter): Validator[Seq[T]] = wrapSeqLikeValidator(() => Seq.newBuilder[T])
+  implicit def listValidator[T: Validator: ClassTag](implicit reporter: MetricsReporter): Validator[List[T]] = wrapSeqLikeValidator(() => List.newBuilder[T])
+  implicit def arrayValidator[T: Validator: ClassTag](implicit reporter: MetricsReporter): Validator[Array[T]] = wrapSeqLikeValidator(() => Array.newBuilder[T])
+  implicit def vectorValidator[T: Validator: ClassTag](implicit reporter: MetricsReporter): Validator[Vector[T]] = wrapSeqLikeValidator(() => Vector.newBuilder[T])
   //scalastyle:on line.size.limit
 
 }
