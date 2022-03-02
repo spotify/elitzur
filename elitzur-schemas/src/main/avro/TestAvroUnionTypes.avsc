@@ -1,0 +1,37 @@
+{
+  "name": "TestAvroUnionTypes",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name": "optRecord",
+      "type": [
+        "null",
+        {
+          "name": "InnerComplexType",
+          "type": "record",
+          "fields": [
+            {
+              "name": "optString",
+              "type": ["null", "string"],
+              "default": null
+            },
+            {
+              "name": "nonOptString",
+              "type": "string",
+              "default": "default string"
+            },
+            {
+              "name": "optRepeatedArray",
+              "type": ["null", {
+                "type": "array",
+                "items": "com.spotify.elitzur.schemas.InnerNestedType"
+              }]
+            }
+          ]
+        }
+      ],
+      "default": null
+    }
+  ]
+}
