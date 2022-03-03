@@ -1,0 +1,63 @@
+{
+  "name": "TestAvroArrayTypes",
+  "namespace": "com.spotify.elitzur.schemas",
+  "type": "record",
+  "fields": [
+    {
+      "name":"arrayLongs",
+      "type":{
+        "type": "array",
+        "items": "long"
+      }
+    },
+    {
+      "name": "innerArrayRoot",
+      "type": {
+        "type": "array",
+        "items": {
+          "name": "innerArrayRecord",
+          "type": "record",
+          "fields": [
+            {
+              "name": "innerArrayInsideRecord",
+              "type": {
+                "type": "array",
+                "items": "long"
+              }
+            },
+            {
+              "name": "userId",
+              "type": "string"
+            },
+            {
+              "name": "deepNestedRecord",
+              "type": {
+                "type": "record",
+                "name": "deepNestedRecord",
+                "fields": [ {
+                  "name": "recordId",
+                  "type": "long"
+                } ]
+              }
+            },
+            {
+              "name": "deeperArrayNestedRecord",
+              "type": ["null", {
+                "type": "record",
+                "name": "DeeperArray",
+                "fields": [ {
+                  "name": "DeeperArray",
+                  "type": {
+                    "type": "array",
+                    "items": "long"
+                  }
+                } ]
+              }],
+              "default": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
