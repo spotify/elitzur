@@ -25,6 +25,7 @@ import com.spotify.elitzur.helpers._
 import com.spotify.elitzur.schemas.TestAvroTypes
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar.mock
 
 class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
   // Input expected to be in the format below
@@ -93,6 +94,19 @@ class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
       )
 
     (inValidPlayCountValueCount, inValidUserIdCount) should be ((1, 1))
+  }
+
+  it should "throw an exception if invalid input is provided" in {
+    val invalidUserInput: Array[(String, DynamicValidationCompanion)] = Array(
+      ("not.a.field", mock[DynamicValidationCompanion]),
+    )
+
+    val thrown = intercept[Exception] {
+      new DynamicAccessorValidator(invalidUserInput, TestAvroTypes.SCHEMA$)
+    }
+
+    thrown.getMessage should be (
+      "Invalid field not.a.field for schema org.apache.avro.Schema$RecordSchema")
   }
 
 }

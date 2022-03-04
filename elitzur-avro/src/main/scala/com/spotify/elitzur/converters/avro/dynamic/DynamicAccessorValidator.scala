@@ -37,9 +37,8 @@ class DynamicAccessorValidator(
     recordAccessorWithValidator.map { case (accessorPath, companion) =>
       Try(DynamicFieldParser(accessorPath, companion, schema)) match {
         case Success(s) => s
-        case Failure(e) => throw new Exception(s"""
-          |Unable to instantiate ${DynamicFieldParser.getClass.getName} given inputs
-          |$accessorPath and ${companion.getClass.getName}.""".stripMargin, e)
+        case Failure(e) => throw new Exception(
+          s"Invalid field $accessorPath for schema ${schema.getClass.getName}", e)
       }
     }
   }
