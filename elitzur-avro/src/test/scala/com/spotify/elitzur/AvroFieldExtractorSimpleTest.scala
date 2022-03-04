@@ -40,7 +40,7 @@ class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
   }
 
   it should "extract a nested record" in {
-    val testSimpleAvroRecord = testAvroTypes
+    val testSimpleAvroRecord = testAvroTypes()
     val fn = AvroObjMapper.getAvroFun(".inner.userId", testSimpleAvroRecord.getSchema)
 
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInner.getUserId)
