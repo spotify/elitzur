@@ -26,13 +26,14 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 
 class DynamicAccessorValidationHelpers(input: Array[(String, DynamicValidationCompanion)]) {
   // Instantiate implicit metric reporter
-  implicit val metricsReporter: MetricsReporter =
+  val metricsReporter: MetricsReporter =
     DynamicAccessorValidatorTestUtils.metricsReporter()
 
   // The following class generates the accessor function based on the user provided input and the
   // Avro schema. It also uses the companion object provided in the input to determine how to
   // validate a given field.
-  val dynamicRecordValidator = new DynamicAccessorValidator(input, TestAvroTypes.SCHEMA$)
+  val dynamicRecordValidator = new DynamicAccessorValidator(
+    input, TestAvroTypes.SCHEMA$)(metricsReporter)
 
   def getFieldParser(input: String, c: DynamicValidationCompanion): DynamicFieldParser = {
     dynamicRecordValidator.fieldParsers

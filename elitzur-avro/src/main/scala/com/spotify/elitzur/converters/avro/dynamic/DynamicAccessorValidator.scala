@@ -27,7 +27,7 @@ import scala.util.{Failure, Success, Try}
 class DynamicAccessorValidator(
   recordAccessorWithValidator: Array[(String, DynamicValidationCompanion)],
   schema: Schema
-)(implicit val metricsReporter: MetricsReporter) {
+)(implicit metricsReporter: MetricsReporter) {
 
   final val className: String = this.getClass.getName
 
@@ -43,7 +43,7 @@ class DynamicAccessorValidator(
     }
   }
 
-  // Create dynamic validator with validators and labels set in the same order as fieldParsers
+  // Create a record validator that consists of all the field validators returned above
   private[elitzur] val validator: DynamicRecordValidator = DynamicRecordValidator(
     fieldParsers.map(_.companion.validator).asInstanceOf[Array[Validator[Any]]],
     fieldParsers.map(_.label)
