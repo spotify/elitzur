@@ -16,84 +16,84 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic.{
-  DynamicAccessorValidator,
-  DynamicFieldParser,
-  DynamicValidationCompanion
-}
+import com.spotify.elitzur.converters.avro.dynamic._
+import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.helpers._
 import com.spotify.elitzur.schemas.TestAvroTypes
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 
-class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
-  // Input expected to be in the format below
-  val userInput: Array[(String, DynamicValidationCompanion)] = Array(
-    (".inner.playCount", DynamicAccessorValidatorTestUtils.NonNegativeLongDynamicCompanion),
-    (".inner.countryCode", DynamicAccessorValidatorTestUtils.CountryCodeDynamicCompanion)
-  )
-
+class DynamicAccessorValidationHelpers(input: Array[(String, DynamicValidationCompanion)]) {
   // Instantiate implicit metric reporter
-  implicit val metricsReporter: MetricsReporter = DynamicAccessorValidatorTestUtils.metricsReporter()
+  implicit val metricsReporter: MetricsReporter =
+    DynamicAccessorValidatorTestUtils.metricsReporter()
 
   // The following class generates the accessor function based on the user provided input and the
   // Avro schema. It also uses the companion object provided in the input to determine how to
   // validate a given field.
-  val dynamicRecordValidator = new DynamicAccessorValidator(userInput, TestAvroTypes.SCHEMA$)
+  val dynamicRecordValidator = new DynamicAccessorValidator(input, TestAvroTypes.SCHEMA$)
 
-  // Extracting individual field parsers for accessing the valid/invalid counts in metricsReporter
-  val playCountFieldParser: DynamicFieldParser = dynamicRecordValidator.fieldParsers
-    .find(x => x.label == ".inner.playCount:NonNegativeLong").get
-  val userIdFieldParser: DynamicFieldParser = dynamicRecordValidator.fieldParsers
-    .find(x => x.label == ".inner.countryCode:CountryCode").get
+  def getFieldParser(input: String, c: DynamicValidationCompanion): DynamicFieldParser = {
+    dynamicRecordValidator.fieldParsers
+      .find(x => x.label == s"$input:${c.validatorIdentifier}").get
+  }
+
+  def getValidAndInvalidCounts(input: String, c: DynamicValidationCompanion): (Int, Int) = {
+    val parser = getFieldParser(input, c)
+    val m = metricsReporter.asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
+    val args = (dynamicRecordValidator.className, parser.label, parser.companion
+      .validatorIdentifier)
+    ((m.getValid _).tupled(args), (m.getInvalid _).tupled(args))
+  }
+}
+
+class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
 
   it should "correctly count the valid fields" in {
+    // Input expected to be in the format below
+    val userInput: Array[(String, DynamicValidationCompanion)] = Array(
+      (".inner.playCount", DynamicAccessorValidatorTestUtils.NonNegativeLongDynamicCompanion),
+      (".inner.countryCode", DynamicAccessorValidatorTestUtils.CountryCodeDynamicCompanion)
+    )
+    val testSetUp = new DynamicAccessorValidationHelpers(userInput)
+
     val validAvroRecord = helpers.SampleAvroRecords.testAvroTypes(isValid = true)
 
-    dynamicRecordValidator.validateRecord(validAvroRecord)
+    // Validate the sample input
+    testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
-    val validPlayCountValueCount = metricsReporter
-      .asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
-      .getValid(
-        dynamicRecordValidator.className,
-        playCountFieldParser.label,
-        playCountFieldParser.companion.validatorIdentifier
-      )
+    val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
+      ".inner.playCount", DynamicAccessorValidatorTestUtils.NonNegativeLongDynamicCompanion)
 
-    val validUserIdCount = metricsReporter
-      .asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
-      .getValid(
-        dynamicRecordValidator.className,
-        userIdFieldParser.label,
-        userIdFieldParser.companion.validatorIdentifier
-      )
+    val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
+      ".inner.countryCode", DynamicAccessorValidatorTestUtils.CountryCodeDynamicCompanion)
 
-    (validPlayCountValueCount, validUserIdCount) should be ((1, 1))
+    (playCountValidCount, playCountInvalidCount,
+      countryCodValidCount, countryCodInvalidCount) should be ((1, 0, 1, 0))
   }
 
   it should "correctly count the invalid fields" in {
+    // Input expected to be in the format below
+    val userInput: Array[(String, DynamicValidationCompanion)] = Array(
+      (".inner.playCount", DynamicAccessorValidatorTestUtils.NonNegativeLongDynamicCompanion),
+      (".inner.countryCode", DynamicAccessorValidatorTestUtils.CountryCodeDynamicCompanion)
+    )
+    val testSetUp = new DynamicAccessorValidationHelpers(userInput)
+
     val validAvroRecord = helpers.SampleAvroRecords.testAvroTypes(isValid = false)
 
-    dynamicRecordValidator.validateRecord(validAvroRecord)
+    // Validate the sample input
+    testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
-    val inValidPlayCountValueCount = metricsReporter
-      .asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
-      .getInvalid(
-        dynamicRecordValidator.className,
-        playCountFieldParser.label,
-        playCountFieldParser.companion.validatorIdentifier
-      )
+    val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
+      ".inner.playCount", DynamicAccessorValidatorTestUtils.NonNegativeLongDynamicCompanion)
 
-    val inValidUserIdCount = metricsReporter
-      .asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
-      .getInvalid(
-        dynamicRecordValidator.className,
-        userIdFieldParser.label,
-        userIdFieldParser.companion.validatorIdentifier
-      )
+    val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
+      ".inner.countryCode", DynamicAccessorValidatorTestUtils.CountryCodeDynamicCompanion)
 
-    (inValidPlayCountValueCount, inValidUserIdCount) should be ((1, 1))
+    (playCountValidCount, playCountInvalidCount,
+      countryCodValidCount, countryCodInvalidCount) should be ((0, 1, 0, 1))
   }
 
   it should "throw an exception if invalid input is provided" in {
@@ -102,7 +102,8 @@ class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
     )
 
     val thrown = intercept[Exception] {
-      new DynamicAccessorValidator(invalidUserInput, TestAvroTypes.SCHEMA$)
+      new DynamicAccessorValidator(invalidUserInput, TestAvroTypes.SCHEMA$)(
+        mock[TestMetricsReporter])
     }
 
     thrown.getMessage should be (
@@ -110,3 +111,4 @@ class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
   }
 
 }
+
