@@ -99,12 +99,12 @@ class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
 
   it should "throw an exception if invalid input is provided" in {
     val invalidUserInput: Array[(String, DynamicValidationCompanion)] = Array(
-      ("not.a.field", mock[DynamicValidationCompanion]),
+      ("not.a.field", mock[DynamicValidationCompanion])
     )
 
     val thrown = intercept[Exception] {
       new DynamicAccessorValidator(invalidUserInput, TestAvroTypes.SCHEMA$)(
-        mock[TestMetricsReporter])
+        mock[MetricsReporter])
     }
 
     thrown.getMessage should be (
