@@ -17,9 +17,10 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic._
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.helpers._
-import com.spotify.elitzur.schemas.TestAvroTypes
+import com.spotify.elitzur.schemas.{TestAvroArrayTypes, TestAvroTypes}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -99,16 +100,19 @@ class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
 
   it should "throw an exception if invalid input is provided" in {
     val invalidUserInput: Array[(String, DynamicValidationCompanion)] = Array(
-      ("not.a.field", mock[DynamicValidationCompanion])
+      ("not.a.field", mock[DynamicValidationCompanion]),
+      (".innerArrayRoot.deepNestedRecord", mock[DynamicValidationCompanion])
     )
 
     val thrown = intercept[Exception] {
-      new DynamicAccessorValidator(invalidUserInput, TestAvroTypes.SCHEMA$)(
+      new DynamicAccessorValidator(invalidUserInput, TestAvroArrayTypes.SCHEMA$)(
         mock[MetricsReporter])
     }
 
-    thrown.getMessage should be (
-      "Invalid field not.a.field for schema org.apache.avro.Schema$RecordSchema")
+    List(
+      AvroAccessorException.MISSING_TOKEN,
+      AvroAccessorException.MISSING_ARRAY_TOKEN
+    ).foldLeft(true)((a, c) => thrown.getMessage.contains(c) && a) should be (true)
   }
 
 }

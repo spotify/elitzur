@@ -17,12 +17,13 @@
 package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 class DynamicAccessorValidator(
   recordAccessorWithValidator: Array[(String, DynamicValidationCompanion)],
@@ -34,17 +35,24 @@ class DynamicAccessorValidator(
   // From the user provided input, create a parser that can extract a value from a record and apply
   // to it the the parsing rule defined in the companion object.
   private[elitzur] val fieldParsers: Array[DynamicFieldParser] = {
-    recordAccessorWithValidator.map { case (accessorPath, companion) =>
-      Try(DynamicFieldParser(accessorPath, companion, schema)) match {
-        case Success(s) => s
-        case Failure(e) => throw new Exception(
-          s"Invalid field $accessorPath for schema ${schema.getClass.getName}", e)
+    val (successes, failures) = recordAccessorWithValidator.map { case (accessorPath, companion) =>
+      Try(DynamicFieldParser(accessorPath, companion, schema))
+      match {
+        case Failure(e) => Failure(InvalidDynamicFieldException(e, accessorPath))
+        case s => s
       }
+    }.partition(_.isSuccess)
+
+    if (!failures.isEmpty) {
+      val throwables = failures.flatMap(_.failed.toOption)
+      throw InvalidDynamicFieldException(throwables, schema)
     }
+
+    successes.flatMap(_.toOption)
   }
 
   // Create a record validator that consists of all the field validators returned above
-  private[elitzur] val validator: DynamicRecordValidator = DynamicRecordValidator(
+  private val validator: DynamicRecordValidator = DynamicRecordValidator(
     fieldParsers.map(_.companion.validator).asInstanceOf[Array[Validator[Any]]],
     fieldParsers.map(_.label)
   )
