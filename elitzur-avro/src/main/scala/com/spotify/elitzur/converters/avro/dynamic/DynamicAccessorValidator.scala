@@ -19,15 +19,19 @@ package com.spotify.elitzur.converters.avro.dynamic
 import com.spotify.elitzur.MetricsReporter
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
+import com.spotify.elitzur.validators.{
+  BaseCompanion,
+  DynamicRecordValidator,
+  Unvalidated,
+  Validator
+}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 
 import scala.util.{Failure, Try}
 
 class DynamicAccessorValidator(
-  recordAccessorWithValidator: Array[(String, DynamicValidationCompanion)],
-  schema: Schema
+  recordAccessorWithValidator: Array[(String, BaseCompanion[_, _], Validator[Any])], schema: Schema
 )(implicit metricsReporter: MetricsReporter) {
 
   final val className: String = this.getClass.getName
@@ -35,17 +39,16 @@ class DynamicAccessorValidator(
   // From the user provided input, create a parser that can extract a value from a record and apply
   // to it the the parsing rule defined in the companion object.
   private[elitzur] val fieldParsers: Array[DynamicFieldParser] = {
-    val (successes, failures) = recordAccessorWithValidator.map { case (accessorPath, companion) =>
-      Try(DynamicFieldParser(accessorPath, companion, schema))
-      match {
+    val (successes, failures) = recordAccessorWithValidator.map {
+      case (accessorPath, validator, companion) =>
+        Try(DynamicFieldParser(accessorPath, validator, companion, schema)) match {
         case Failure(e) => Failure(InvalidDynamicFieldException(e, accessorPath))
         case s => s
       }
     }.partition(_.isSuccess)
 
     if (!failures.isEmpty) {
-      val throwables = failures.flatMap(_.failed.toOption)
-      throw InvalidDynamicFieldException(throwables, schema)
+      throw InvalidDynamicFieldException(failures.flatMap(_.failed.toOption), schema)
     }
 
     successes.flatMap(_.toOption)
@@ -53,24 +56,30 @@ class DynamicAccessorValidator(
 
   // Create a record validator that consists of all the field validators returned above
   private val validator: DynamicRecordValidator = DynamicRecordValidator(
-    fieldParsers.map(_.companion.validator).asInstanceOf[Array[Validator[Any]]],
-    fieldParsers.map(_.label)
+    fieldParsers.map(_.fieldValidator),
+    fieldParsers.map(_.fieldLabel)
   )
 
   def validateRecord(avroRecord: GenericRecord): Unit = {
-    val parseAllResult: Seq[Any] = fieldParsers.map(_.dynamicParser(avroRecord))
+    val parseAllResult: Seq[Any] = fieldParsers.map(_.fieldParser(avroRecord))
     validator.validateRecord(Unvalidated(parseAllResult), outermostClassName = Some(className))
   }
 }
 
 case class DynamicFieldParser(
-  accessorPath: String, companion: DynamicValidationCompanion, schema: Schema) {
-  val label = s"$accessorPath:${companion.validatorIdentifier}"
+  accessorPath: String,
+  baseCompanion: BaseCompanion[_, _],
+  fieldValidator: Validator[Any],
+  schema: Schema
+) {
+  val fieldValidationType: String = baseCompanion.validationType
+
+  val fieldLabel: String = s"$accessorPath:$fieldValidationType"
 
   val fieldAccessor: Any => Any = AvroObjMapper.getAvroFun(accessorPath, schema)
 
-  def dynamicParser(avroRecord: GenericRecord): Any = {
+  def fieldParser(avroRecord: GenericRecord): Any = {
     val fieldValue = fieldAccessor(avroRecord)
-    companion.dynamicParser(fieldValue)
+    baseCompanion.parseDynamic(fieldValue)
   }
 }

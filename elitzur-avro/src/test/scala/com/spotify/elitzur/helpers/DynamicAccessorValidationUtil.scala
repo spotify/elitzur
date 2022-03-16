@@ -18,10 +18,6 @@
 package com.spotify.elitzur.helpers
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.dynamic.{
-  DynamicValidationCompanion,
-  DynamicValidationCompanionImplicits
-}
 import com.spotify.elitzur.types.Owner
 import com.spotify.elitzur.validators._
 
@@ -87,8 +83,6 @@ object CountryCompanion extends BaseCompanion[String, CountryCode] {
 }
 
 object DynamicAccessorValidatorTestUtils {
-  import DynamicValidationCompanionImplicits._
-
   class TestMetricsReporter extends MetricsReporter {
     val map : scala.collection.mutable.Map[String, Int] =
       scala.collection.mutable.Map[String, Int]().withDefaultValue(0)
@@ -104,22 +98,4 @@ object DynamicAccessorValidatorTestUtils {
   }
 
   def metricsReporter(): MetricsReporter = new TestMetricsReporter
-
-  val NonNegativeLongDynamicCompanion: DynamicValidationCompanion =
-    new DynamicValidationCompanion(NonNegativeLongCompanion.validationType) {
-      override val validator: Validator[_] = implicitly[Validator[NonNegativeLong]]
-      override def dynamicParser: Any => Any = NonNegativeLongCompanion.dynamicParser
-    }
-
-  val NonNegativeDoubleDynamicCompanion: DynamicValidationCompanion =
-    new DynamicValidationCompanion(NonNegativeDoubleCompanion.validationType) {
-      override val validator: Validator[_] = implicitly[Validator[NonNegativeDouble]]
-      override def dynamicParser: Any => Any = NonNegativeDoubleCompanion.dynamicParser
-    }
-
-  val CountryCodeDynamicCompanion: DynamicValidationCompanion =
-    new DynamicValidationCompanion(CountryCompanion.validationType) {
-      override val validator: Validator[_] = implicitly[Validator[CountryCode]]
-      override def dynamicParser: Any => Any = CountryCompanion.dynamicParser
-    }
 }
