@@ -55,11 +55,11 @@ class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
   val userInput: Array[(String, BaseCompanion[_, _], Validator[Any])] = Array(
     (".inner.playCount",
       NonNegativeLongCompanion,
-      implicitly[Validator[NonNegativeLong]].asInstanceOf[Validator[Any]],
+      implicitly[Validator[NonNegativeLong]].asInstanceOf[Validator[Any]]
     ),
     (".inner.countryCode",
       CountryCompanion,
-      implicitly[Validator[CountryCode]].asInstanceOf[Validator[Any]],
+      implicitly[Validator[CountryCode]].asInstanceOf[Validator[Any]]
     )
   )
 

@@ -42,8 +42,8 @@ class DynamicAccessorValidator(
     val (successes, failures) = recordAccessorWithValidator.map {
       case (accessorPath, validator, companion) =>
         Try(DynamicFieldParser(accessorPath, validator, companion, schema)) match {
-        case Failure(e) => Failure(InvalidDynamicFieldException(e, accessorPath))
-        case s => s
+          case Failure(e) => Failure(InvalidDynamicFieldException(e, accessorPath))
+          case s => s
       }
     }.partition(_.isSuccess)
 
