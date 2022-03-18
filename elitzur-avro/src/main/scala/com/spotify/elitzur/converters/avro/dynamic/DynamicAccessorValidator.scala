@@ -31,7 +31,7 @@ import org.apache.avro.generic.GenericRecord
 import scala.util.{Failure, Try}
 
 class DynamicAccessorValidator(
-  recordAccessorWithValidator: Array[(String, BaseCompanion[_, _], Validator[Any])], schema: Schema
+  validatorProperties: Array[RecordValidatorProperty], schema: Schema
 )(implicit metricsReporter: MetricsReporter) {
 
   final val className: String = this.getClass.getName
@@ -39,10 +39,9 @@ class DynamicAccessorValidator(
   // From the user provided input, create a parser that can extract a value from a record and apply
   // to it the the parsing rule defined in the companion object.
   private[elitzur] val fieldParsers: Array[DynamicFieldParser] = {
-    val (successes, failures) = recordAccessorWithValidator.map {
-      case (accessorPath, validator, companion) =>
-        Try(DynamicFieldParser(accessorPath, validator, companion, schema)) match {
-          case Failure(e) => Failure(InvalidDynamicFieldException(e, accessorPath))
+    val (successes, failures) = validatorProperties.map { r =>
+        Try(DynamicFieldParser(r, schema)) match {
+          case Failure(e) => Failure(InvalidDynamicFieldException(e, r.accessorPath))
           case s => s
       }
     }.partition(_.isSuccess)
@@ -67,19 +66,23 @@ class DynamicAccessorValidator(
 }
 
 case class DynamicFieldParser(
-  accessorPath: String,
-  baseCompanion: BaseCompanion[_, _],
-  fieldValidator: Validator[Any],
+  validatorProperty: RecordValidatorProperty,
   schema: Schema
 ) {
-  val fieldValidationType: String = baseCompanion.validationType
+  val fieldValidationType: String = validatorProperty.companion.validationType
 
-  val fieldLabel: String = s"$accessorPath:$fieldValidationType"
+  val fieldLabel: String = s"${validatorProperty.accessorPath}:$fieldValidationType"
 
-  val fieldAccessor: Any => Any = AvroObjMapper.getAvroFun(accessorPath, schema)
+  val fieldValidator: Validator[Any] = validatorProperty.validator
+
+  val fieldAccessor: Any => Any = AvroObjMapper.getAvroFun(
+    validatorProperty.accessorPath, schema)
 
   def fieldParser(avroRecord: GenericRecord): Any = {
     val fieldValue = fieldAccessor(avroRecord)
-    baseCompanion.parseDynamic(fieldValue)
+    validatorProperty.companion.parseDynamic(fieldValue)
   }
 }
+
+case class RecordValidatorProperty(
+  accessorPath: String, companion: BaseCompanion[_, _], validator: Validator[Any])

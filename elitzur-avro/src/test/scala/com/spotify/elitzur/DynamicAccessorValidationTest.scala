@@ -26,7 +26,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 class DynamicAccessorValidationHelpers(
-  input: Array[(String, BaseCompanion[_, _], Validator[Any])]) {
+  input: Array[RecordValidatorProperty]) {
   // Instantiate implicit metric reporter
   val metricsReporter: MetricsReporter =
     DynamicAccessorValidatorTestUtils.metricsReporter()
@@ -52,12 +52,12 @@ class DynamicAccessorValidationHelpers(
 
 class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
   // Input expected to be in the format below
-  val userInput: Array[(String, BaseCompanion[_, _], Validator[Any])] = Array(
-    (".inner.playCount",
+  val userInput: Array[RecordValidatorProperty] = Array(
+    RecordValidatorProperty(".inner.playCount",
       NonNegativeLongCompanion,
       implicitly[Validator[NonNegativeLong]].asInstanceOf[Validator[Any]]
     ),
-    (".inner.countryCode",
+    RecordValidatorProperty(".inner.countryCode",
       CountryCompanion,
       implicitly[Validator[CountryCode]].asInstanceOf[Validator[Any]]
     )
@@ -100,9 +100,11 @@ class DynamicAccessorValidationTest extends AnyFlatSpec with Matchers {
   }
 
   it should "throw an exception if invalid input is provided" in {
-    val invalidUserInput: Array[(String, BaseCompanion[_, _], Validator[Any])] = Array(
-      ("not.a.field", mock[BaseCompanion[_, _]], mock[Validator[Any]]),
-      (".innerArrayRoot.deepNestedRecord", mock[BaseCompanion[_, _]], mock[Validator[Any]])
+    val invalidUserInput: Array[RecordValidatorProperty] = Array(
+      RecordValidatorProperty(
+        "not.a.field", mock[BaseCompanion[_, _]], mock[Validator[Any]]),
+      RecordValidatorProperty(
+        ".innerArrayRoot.deepNestedRecord", mock[BaseCompanion[_, _]], mock[Validator[Any]])
     )
 
     val thrown = intercept[Exception] {
