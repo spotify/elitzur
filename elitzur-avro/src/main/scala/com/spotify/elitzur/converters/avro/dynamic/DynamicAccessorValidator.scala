@@ -30,17 +30,15 @@ import org.apache.avro.generic.GenericRecord
 
 import scala.util.{Failure, Try}
 
-class DynamicAccessorValidator(
-  validatorProperties: Array[RecordValidatorProperty], schema: Schema
-)(implicit metricsReporter: MetricsReporter) {
-
+class DynamicAccessorValidator(validatorProperties: Array[RecordValidatorProperty], schema: Schema)
+ (implicit metricsReporter: MetricsReporter) {
   final val className: String = this.getClass.getName
 
   // From the user provided input, create a parser that can extract a value from a record and apply
   // to it the the parsing rule defined in the companion object.
   private[elitzur] val fieldParsers: Array[DynamicFieldParser] = {
     val (successes, failures) = validatorProperties.map { r =>
-        Try(DynamicFieldParser(r, schema)) match {
+        Try(new DynamicFieldParser(r, schema)) match {
           case Failure(e) => Failure(InvalidDynamicFieldException(e, r.accessorPath))
           case s => s
       }
@@ -65,10 +63,7 @@ class DynamicAccessorValidator(
   }
 }
 
-case class DynamicFieldParser(
-  validatorProperty: RecordValidatorProperty,
-  schema: Schema
-) {
+class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Schema) {
   val fieldValidationType: String = validatorProperty.companion.validationType
 
   val fieldLabel: String = s"${validatorProperty.accessorPath}:$fieldValidationType"
