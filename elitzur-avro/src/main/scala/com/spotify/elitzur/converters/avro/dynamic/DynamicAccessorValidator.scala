@@ -64,13 +64,12 @@ class DynamicAccessorValidator(validatorProperties: Array[RecordValidatorPropert
 }
 
 class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Schema) {
-  val fieldValidationType: String = validatorProperty.companion.validationType
+  private[elitzur] val fieldLabel: String =
+    s"${validatorProperty.accessorPath}:${validatorProperty.companion.validationType}"
 
-  val fieldLabel: String = s"${validatorProperty.accessorPath}:$fieldValidationType"
+  private[elitzur] val fieldValidator: Validator[Any] = validatorProperty.validator
 
-  val fieldValidator: Validator[Any] = validatorProperty.validator
-
-  val fieldAccessor: Any => Any = AvroObjMapper.getAvroFun(
+  private val fieldAccessor: Any => Any = AvroObjMapper.getAvroFun(
     validatorProperty.accessorPath, schema)
 
   def fieldParser(avroRecord: GenericRecord): Any = {
