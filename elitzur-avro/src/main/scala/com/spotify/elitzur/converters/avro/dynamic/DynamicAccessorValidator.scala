@@ -74,7 +74,7 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
 
   def fieldParser(avroRecord: GenericRecord): Any = {
     val fieldValue = fieldAccessor(avroRecord)
-    validatorProperty.companion.parseDynamic(fieldValue)
+    validatorProperty.companion.parseUnsafe(fieldValue)
   }
 }
 
