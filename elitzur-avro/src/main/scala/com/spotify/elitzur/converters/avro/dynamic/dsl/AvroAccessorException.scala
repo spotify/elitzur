@@ -16,6 +16,8 @@
  */
 package com.spotify.elitzur.converters.avro.dynamic.dsl
 
+import org.apache.avro.Schema
+
 object AvroAccessorException {
   class InvalidDynamicFieldException(msg: String) extends Exception(msg)
 
@@ -35,4 +37,15 @@ object AvroAccessorException {
       |in the input.
       |""".stripMargin
 
+  object InvalidDynamicFieldException {
+    def apply(errs: Array[Throwable], schema: Schema): InvalidDynamicFieldException = {
+      val concatErrMsg: String = errs.map(err => "\t".concat(err.getMessage)).mkString(",\n")
+      new InvalidDynamicFieldException(s"Invalid field(s) for schema $schema: \n$concatErrMsg")
+    }
+
+    // TODO: String is general to the apply method. Wrap accessorPath in the future.
+    def apply(err: Throwable, accessorPath: String): InvalidDynamicFieldException = {
+      new InvalidDynamicFieldException(s"Invalid field $accessorPath: ${err.getMessage}")
+    }
+  }
 }

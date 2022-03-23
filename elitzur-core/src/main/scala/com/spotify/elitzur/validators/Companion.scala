@@ -40,6 +40,7 @@ trait BaseCompanion[T, A] extends Serializable {
   def parse(data: T): A
   def owner: Owner
   def description: String
+  def parseUnsafe(data: Any): Any = parse(data.asInstanceOf[T])
 }
 
 //scalastyle:off line.size.limit

@@ -33,8 +33,8 @@ object SampleAvroRecords {
     .amend(if (isValid) Gen.posNum[Long] else Gen.negNum[Long])(_.setPlayCount)
     .sample.get
 
-  def testAvroTypes: TestAvroTypes = avroOf[TestAvroTypes]
-    .amend(innerNestedSample())(_.setInner)
+  def testAvroTypes(isValid: Boolean = true): TestAvroTypes = avroOf[TestAvroTypes]
+    .amend(innerNestedSample(isValid))(_.setInner)
     .sample.get
 
   def testAvroArrayTypes: TestAvroArrayTypes = {
