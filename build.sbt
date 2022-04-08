@@ -28,7 +28,7 @@ val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.13"
 val magnoliaVersion = "1.0.0-M4"
 val ratatoolVersion = "0.3.25"
-val scalaCheckVersion = "1.14.3"
+val scalaCheckVersion = "1.16.0"
 val enumeratumVersion = "1.7.0"
 val scalaCollectionsCompatVersion = "2.6.0"
 
