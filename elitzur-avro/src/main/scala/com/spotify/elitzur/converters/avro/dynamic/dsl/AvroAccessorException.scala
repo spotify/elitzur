@@ -40,7 +40,8 @@ object AvroAccessorException {
   object InvalidDynamicFieldException {
     def apply(errs: Array[Throwable], schema: Schema): InvalidDynamicFieldException = {
       val concatErrMsg: String = errs.map(err => "\t".concat(err.getMessage)).mkString(",\n")
-      new InvalidDynamicFieldException(s"Invalid field(s) for schema $schema: \n$concatErrMsg")
+      new InvalidDynamicFieldException(
+        s"Invalid field(s) for schema ${schema.toString}: \n$concatErrMsg")
     }
 
     // TODO: String is general to the apply method. Wrap accessorPath in the future.
