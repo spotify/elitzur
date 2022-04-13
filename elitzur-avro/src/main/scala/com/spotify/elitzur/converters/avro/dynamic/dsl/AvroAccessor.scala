@@ -39,7 +39,8 @@ case class NullableAccessor(field: String, innerOps: List[BaseAccessor], innerFn
   }
 }
 
-case class ArrayFlatmapAccessor(field: String, innerFn: Any => Any) extends BaseAccessor {
+case class ArrayFlatmapAccessor(field: String, innerOps: List[BaseAccessor], innerFn: Any => Any)
+  extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
     val res = new ju.ArrayList[Any]
@@ -49,7 +50,8 @@ case class ArrayFlatmapAccessor(field: String, innerFn: Any => Any) extends Base
   }
 }
 
-case class ArrayMapAccessor(field: String, innerFn: Any => Any) extends BaseAccessor {
+case class ArrayMapAccessor(field: String, innerOps: List[BaseAccessor], innerFn: Any => Any)
+  extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
     val res = new ju.ArrayList[Any]

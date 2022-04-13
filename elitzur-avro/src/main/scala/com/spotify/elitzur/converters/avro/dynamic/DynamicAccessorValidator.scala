@@ -25,9 +25,11 @@ import com.spotify.elitzur.validators.{
   Unvalidated,
   Validator
 }
+import java.{util => ju}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 
+import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import scala.util.{Failure, Try}
 
 class DynamicAccessorValidator(validatorProperties: Array[RecordValidatorProperty], schema: Schema)
@@ -38,9 +40,9 @@ class DynamicAccessorValidator(validatorProperties: Array[RecordValidatorPropert
   // to it the the parsing rule defined in the companion object.
   private[elitzur] val fieldParsers: Array[DynamicFieldParser] = {
     val (successes, failures) = validatorProperties.map { r =>
-        Try(new DynamicFieldParser(r, schema)) match {
-          case Failure(e) => Failure(InvalidDynamicFieldException(e, r.accessorPath))
-          case s => s
+      Try(new DynamicFieldParser(r, schema)) match {
+        case Failure(e) => Failure(InvalidDynamicFieldException(e, r.accessorPath))
+        case s => s
       }
     }.partition(_.isSuccess)
 
@@ -69,13 +71,49 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
 
   private[elitzur] val fieldValidator: Validator[Any] = validatorProperty.validator
 
-  private val fieldAccessor: Any => Any = AvroObjMapper.getAvroFun(
+  private val fieldAccessor = AvroObjMapper.getAvroFunWithSchema(
     validatorProperty.accessorPath, schema)
 
-  def fieldParser(avroRecord: GenericRecord): Any = {
-    val fieldValue = fieldAccessor(avroRecord)
-    validatorProperty.companion.parseUnsafe(fieldValue)
+  private val parsingFun: Any => Any = { fieldValue: Any =>
+    val isAvroString = DynamicFieldParserUtil.isAvroString(schema)
+
+    val fn = { x: Any => if (fieldAccessor.isNullable) {
+        if (isAvroString) {
+          Option(x).map(s => validatorProperty.companion.parseUnsafe(s.toString))
+        } else {
+          Option(x).map(validatorProperty.companion.parseUnsafe)
+        }
+      } else {
+        if (isAvroString) {
+          validatorProperty.companion.parseUnsafe(x.toString)
+        } else {
+          validatorProperty.companion.parseUnsafe(x)
+        }
+      }
+    }
+
+    if (fieldAccessor.isArray) {
+      fieldValue.asInstanceOf[ju.List].asScala.toSeq.map(fn)
+    } else {
+      fn
+    }
+
   }
+
+  def fieldParser(avroRecord: GenericRecord): Any = {
+    val fieldValue = fieldAccessor.accessorFn(avroRecord)
+    parsingFun(fieldValue)
+  }
+}
+
+object DynamicFieldParserUtil {
+
+  def isAvroString(schema: Schema): Boolean = {
+    if (schema.getType == Schema.Type.STRING) { true }
+    else if (schema.getType == Schema.Type.UNION) { schema.getTypes.contains(Schema.Type.STRING) }
+    else { false }
+  }
+
 }
 
 case class RecordValidatorProperty(

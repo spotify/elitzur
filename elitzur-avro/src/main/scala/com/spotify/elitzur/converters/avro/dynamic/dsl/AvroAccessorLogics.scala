@@ -84,9 +84,9 @@ class ArrayAccessorLogic(
       // flattenFlag is true if one of the internal operation types is a map based operation
       val flattenFlag = getFlattenFlag(recursiveResult.map(_.ops))
       if (flattenFlag) {
-        ArrayFlatmapAccessor(fieldTokens.field, innerOps)
+        ArrayFlatmapAccessor(fieldTokens.field, recursiveResult.map(_.ops), innerOps)
       } else {
-        ArrayMapAccessor(fieldTokens.field, innerOps)
+        ArrayMapAccessor(fieldTokens.field, recursiveResult.map(_.ops), innerOps)
       }
     } else {
       ArrayNoopAccessor(fieldTokens.field, fieldTokens.op.contains(arrayToken))

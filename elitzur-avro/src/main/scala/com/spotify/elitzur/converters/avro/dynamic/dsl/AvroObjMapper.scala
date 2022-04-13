@@ -34,6 +34,17 @@ object AvroObjMapper {
     mapToAvroFun(avroFieldPath)
   }
 
+  private val mapToAvroFunWithSchema: mutable.Map[String, Accessor] =
+    mutable.Map.empty[String, Accessor]
+
+  def getAvroFunWithSchema(avroFieldPath: String, schema: Schema): Accessor = {
+    if (!mapToAvroFunWithSchema.contains(avroFieldPath)) {
+      val accessor = Accessor(getAvroAccessors(avroFieldPath, schema))
+      mapToAvroFunWithSchema += (avroFieldPath -> accessor)
+    }
+    mapToAvroFunWithSchema(avroFieldPath)
+  }
+
   @tailrec
   private[dsl] def getAvroAccessors(
     path: String,
@@ -86,6 +97,43 @@ object AvroAccessorUtil {
       throw new InvalidDynamicFieldException(MISSING_TOKEN)
     }
   }
+}
+
+case class Accessor(accessors: List[AvroAccessorContainer]) {
+  val accessorFn: Any => Any = combineFns(accessors.map(_.ops))
+
+  val schema: Schema = accessors.map(_.schema).lastOption.get
+
+  val isNullable: Boolean = hasNullable(accessors.map(_.ops))
+
+  val isArray: Boolean = hasArray(accessors.map(_.ops))
+
+  private[dsl] def hasArray(ops: List[BaseAccessor]): Boolean = {
+    ops.foldLeft(false)((accBoolean, currAccessor) => {
+      val hasArrayAccessor = currAccessor match {
+        case n: NullableAccessor => hasArray(n.innerOps)
+        case _: ArrayMapAccessor | _: ArrayFlatmapAccessor | _: ArrayNoopAccessor  => true
+        case _ => false
+      }
+      accBoolean || hasArrayAccessor
+    })
+  }
+
+  private[dsl] def hasNullable(ops: List[BaseAccessor]): Boolean = {
+    ops.foldLeft(false)((accBoolean, currAccessor) => {
+      val hasNullableAccessor = currAccessor match {
+        case _: ArrayNoopAccessor => false
+        case _: NullableAccessor => true
+        case a: ArrayMapAccessor => hasNullable(a.innerOps)
+        case a: ArrayFlatmapAccessor => hasNullable(a.innerOps)
+        case _ => false
+      }
+      accBoolean || hasNullableAccessor
+    })
+  }
+
+  private[dsl] def combineFns(fns: List[BaseAccessor]): Any => Any =
+    fns.map(_.fn).reduceLeftOption((f, g) => f andThen g).getOrElse(NoopAccessor().fn)
 }
 
 case class AvroAccessorContainer(ops: BaseAccessor, schema: Schema, rest: Option[String])
