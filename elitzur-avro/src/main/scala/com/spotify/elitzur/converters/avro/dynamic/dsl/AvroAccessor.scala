@@ -16,7 +16,9 @@
  */
 package com.spotify.elitzur.converters.avro.dynamic.dsl
 
+import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
+
 import java.{util => ju}
 
 trait BaseAccessor {
@@ -27,20 +29,22 @@ case class NoopAccessor() extends BaseAccessor {
   def fn: Any => Any = (o: Any) => o
 }
 
-case class IndexAccessor(field: String) extends BaseAccessor {
+case class IndexAccessor(field: String, schema: Schema) extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => o.asInstanceOf[GenericRecord].get(field)
 }
 
-case class NullableAccessor(field: String, innerOps: List[BaseAccessor], innerFn: Any => Any)
-  extends BaseAccessor {
+case class NullableAccessor(
+  field: String, innerOps: List[BaseAccessor], innerFn: Any => Any, schema: Schema
+) extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
     if (innerAvroObj == null) null else innerFn(o)
   }
 }
 
-case class ArrayFlatmapAccessor(field: String, innerOps: List[BaseAccessor], innerFn: Any => Any)
-  extends BaseAccessor {
+case class ArrayFlatmapAccessor(
+  field: String, innerOps: List[BaseAccessor], innerFn: Any => Any, schema: Schema
+) extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
     val res = new ju.ArrayList[Any]
@@ -50,8 +54,9 @@ case class ArrayFlatmapAccessor(field: String, innerOps: List[BaseAccessor], inn
   }
 }
 
-case class ArrayMapAccessor(field: String, innerOps: List[BaseAccessor], innerFn: Any => Any)
-  extends BaseAccessor {
+case class ArrayMapAccessor(
+  field: String, innerOps: List[BaseAccessor], innerFn: Any => Any, schema: Schema
+) extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
     val res = new ju.ArrayList[Any]
@@ -60,6 +65,7 @@ case class ArrayMapAccessor(field: String, innerOps: List[BaseAccessor], innerFn
   }
 }
 
-case class ArrayNoopAccessor(field: String, flatten: Boolean) extends BaseAccessor {
-  override def fn: Any => Any = (o: Any) => IndexAccessor(field).fn(o)
+case class ArrayNoopAccessor(field: String, flatten: Boolean, schema: Schema)
+  extends BaseAccessor {
+  override def fn: Any => Any = (o: Any) => IndexAccessor(field, schema).fn(o)
 }

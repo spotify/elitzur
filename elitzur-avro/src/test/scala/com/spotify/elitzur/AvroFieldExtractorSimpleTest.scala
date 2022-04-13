@@ -27,21 +27,21 @@ class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
 
   it should "extract a primitive at the record root level" in {
     val testSimpleAvroRecord = innerNestedSample()
-    val fn = AvroObjMapper.getAvroFun(".userId", testSimpleAvroRecord.getSchema)
+    val fn = AvroObjMapper.getAvroFun(".userId", testSimpleAvroRecord.getSchema).accessorFn
 
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getUserId)
   }
 
   it should "extract an array at the record root level" in {
     val testSimpleAvroRecord = testAvroArrayTypes
-    val fn = AvroObjMapper.getAvroFun(".arrayLongs", testSimpleAvroRecord.getSchema)
+    val fn = AvroObjMapper.getAvroFun(".arrayLongs", testSimpleAvroRecord.getSchema).accessorFn
 
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getArrayLongs)
   }
 
   it should "extract a nested record" in {
     val testSimpleAvroRecord = testAvroTypes()
-    val fn = AvroObjMapper.getAvroFun(".inner.userId", testSimpleAvroRecord.getSchema)
+    val fn = AvroObjMapper.getAvroFun(".inner.userId", testSimpleAvroRecord.getSchema).accessorFn
 
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInner.getUserId)
   }
@@ -50,7 +50,7 @@ class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
     val schema = SchemaBuilder
       .builder.record("record").fields.requiredLong("_user_id10").endRecord
     val testSimpleAvroRecord = new GenericRecordBuilder(schema).set("_user_id10", 1L).build
-    val fn = AvroObjMapper.getAvroFun("._user_id10", testSimpleAvroRecord.getSchema)
+    val fn = AvroObjMapper.getAvroFun("._user_id10", testSimpleAvroRecord.getSchema).accessorFn
 
     fn(testSimpleAvroRecord) should be (testSimpleAvroRecord.get("_user_id10"))
   }

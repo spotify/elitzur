@@ -27,7 +27,7 @@ trait BaseAccessorLogic {
 }
 
 class IndexAccessorLogic(schema: Schema, fieldTokens: AvroFieldTokens) extends BaseAccessorLogic {
-  override val accessor: BaseAccessor = IndexAccessor(fieldTokens.field)
+  override val accessor: BaseAccessor = IndexAccessor(fieldTokens.field, schema)
   override val avroOp: AvroAccessorContainer =
     AvroAccessorContainer(accessor, schema, fieldTokens.rest)
 }
@@ -49,9 +49,9 @@ class NullableAccessorLogic(
       val recursiveResult = AvroObjMapper.getAvroAccessors(headAccessor.rest.get, innerSchema)
       // innerOps represents the list of all accessors to be applied if the avro obj is not null
       val innerOps = (headAccessor +: recursiveResult).map(_.ops)
-      NullableAccessor(field, innerOps, AvroObjMapper.combineFns(innerOps))
+      NullableAccessor(field, innerOps, AvroObjMapper.combineFns(innerOps), innerSchema)
     } else {
-      NullableAccessor(field, List(headAccessor.ops), headAccessor.ops.fn)
+      NullableAccessor(field, List(headAccessor.ops), headAccessor.ops.fn, innerSchema)
     }
   }
 
@@ -84,12 +84,12 @@ class ArrayAccessorLogic(
       // flattenFlag is true if one of the internal operation types is a map based operation
       val flattenFlag = getFlattenFlag(recursiveResult.map(_.ops))
       if (flattenFlag) {
-        ArrayFlatmapAccessor(fieldTokens.field, recursiveResult.map(_.ops), innerOps)
+        ArrayFlatmapAccessor(fieldTokens.field, recursiveResult.map(_.ops), innerOps, innerSchema)
       } else {
-        ArrayMapAccessor(fieldTokens.field, recursiveResult.map(_.ops), innerOps)
+        ArrayMapAccessor(fieldTokens.field, recursiveResult.map(_.ops), innerOps, innerSchema)
       }
     } else {
-      ArrayNoopAccessor(fieldTokens.field, fieldTokens.op.contains(arrayToken))
+      ArrayNoopAccessor(fieldTokens.field, fieldTokens.op.contains(arrayToken), innerSchema)
     }
   }
 

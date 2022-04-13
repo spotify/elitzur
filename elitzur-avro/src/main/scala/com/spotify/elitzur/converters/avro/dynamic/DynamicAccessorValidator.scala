@@ -71,7 +71,7 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
 
   private[elitzur] val fieldValidator: Validator[Any] = validatorProperty.validator
 
-  private val fieldAccessor = AvroObjMapper.getAvroFunWithSchema(
+  private val fieldAccessor = AvroObjMapper.getAvroFun(
     validatorProperty.accessorPath, schema)
 
   private val parsingFun: Any => Any = { fieldValue: Any =>
@@ -93,9 +93,9 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
     }
 
     if (fieldAccessor.isArray) {
-      fieldValue.asInstanceOf[ju.List].asScala.toSeq.map(fn)
+      fieldValue.asInstanceOf[ju.List[Any]].asScala.toSeq.map(fn)
     } else {
-      fn
+      fn(fieldValue)
     }
 
   }
@@ -107,13 +107,11 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
 }
 
 object DynamicFieldParserUtil {
-
   def isAvroString(schema: Schema): Boolean = {
     if (schema.getType == Schema.Type.STRING) { true }
     else if (schema.getType == Schema.Type.UNION) { schema.getTypes.contains(Schema.Type.STRING) }
     else { false }
   }
-
 }
 
 case class RecordValidatorProperty(

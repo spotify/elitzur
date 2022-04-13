@@ -24,25 +24,14 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 object AvroObjMapper {
-  private val mapToAvroFun: mutable.Map[String, Any => Any] = mutable.Map.empty[String, Any => Any]
+  private val mapToAvroFun: mutable.Map[String, Accessor] = mutable.Map.empty[String, Accessor]
 
-  def getAvroFun(avroFieldPath: String, schema: Schema): Any => Any = {
+  def getAvroFun(avroFieldPath: String, schema: Schema): Accessor = {
     if (!mapToAvroFun.contains(avroFieldPath)) {
-      val avroOperators = getAvroAccessors(avroFieldPath, schema).map(_.ops)
-      mapToAvroFun += (avroFieldPath -> combineFns(avroOperators))
+      val accessor = Accessor(getAvroAccessors(avroFieldPath, schema))
+      mapToAvroFun += (avroFieldPath -> accessor)
     }
     mapToAvroFun(avroFieldPath)
-  }
-
-  private val mapToAvroFunWithSchema: mutable.Map[String, Accessor] =
-    mutable.Map.empty[String, Accessor]
-
-  def getAvroFunWithSchema(avroFieldPath: String, schema: Schema): Accessor = {
-    if (!mapToAvroFunWithSchema.contains(avroFieldPath)) {
-      val accessor = Accessor(getAvroAccessors(avroFieldPath, schema))
-      mapToAvroFunWithSchema += (avroFieldPath -> accessor)
-    }
-    mapToAvroFunWithSchema(avroFieldPath)
   }
 
   @tailrec
@@ -102,11 +91,22 @@ object AvroAccessorUtil {
 case class Accessor(accessors: List[AvroAccessorContainer]) {
   val accessorFn: Any => Any = combineFns(accessors.map(_.ops))
 
-  val schema: Schema = accessors.map(_.schema).lastOption.get
+  val schema: Schema = innerSchema(accessors.map(_.ops)).get
 
   val isNullable: Boolean = hasNullable(accessors.map(_.ops))
 
   val isArray: Boolean = hasArray(accessors.map(_.ops))
+
+  private[dsl] def innerSchema(ops: List[BaseAccessor]): Option[Schema] = {
+    ops.lastOption match {
+      case Some(n: NullableAccessor) => innerSchema(n.innerOps)
+      case Some(a: ArrayMapAccessor) => innerSchema(a.innerOps)
+      case Some(a: ArrayFlatmapAccessor) => innerSchema(a.innerOps)
+      case Some(a: ArrayNoopAccessor) => Some(a.schema)
+      case Some(i: IndexAccessor) => Some(i.schema)
+      case _ => None
+    }
+  }
 
   private[dsl] def hasArray(ops: List[BaseAccessor]): Boolean = {
     ops.foldLeft(false)((accBoolean, currAccessor) => {
