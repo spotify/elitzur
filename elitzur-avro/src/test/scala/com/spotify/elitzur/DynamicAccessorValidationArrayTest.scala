@@ -20,12 +20,13 @@ import com.spotify.elitzur.converters.avro.dynamic.{ArrayElitzurMode, RecordVali
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.helpers.{
   DynamicAccessorValidationHelpers,
-  DynamicAccessorValidatorTestUtils
+  DynamicAccessorValidatorTestUtils,
+  NonNegativeLong,
+  NonNegativeLongCompanion
 }
 import com.spotify.elitzur.helpers.SampleAvroRecords.testAvroArrayTypes
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
 import com.spotify.elitzur.validators.Validator
-import com.spotify.elitzur.{NonNegativeLongTesting, NonNegativeLongTestingCompanion}
 
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
@@ -45,8 +46,8 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
   val userInput: Array[RecordValidatorProperty] = Array(
     RecordValidatorProperty(
       ".arrayLongs",
-      NonNegativeLongTestingCompanion,
-      implicitly[Validator[Seq[NonNegativeLongTesting]]].asInstanceOf[Validator[Any]],
+      NonNegativeLongCompanion,
+      implicitly[Validator[Seq[NonNegativeLong]]].asInstanceOf[Validator[Any]],
       ArrayElitzurMode
     )
   )
@@ -59,12 +60,12 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".arrayLongs", NonNegativeLongTestingCompanion)
+      ".arrayLongs", NonNegativeLongCompanion)
 
     val (expectedValid, expectedInvalid) = validAvroRecord
       .getArrayLongs
       .asScala
-      .map(NonNegativeLongTesting(_))
+      .map(NonNegativeLong(_))
       .partition(_.checkValid)
 
     (playCountValidCount, playCountInvalidCount) should be (

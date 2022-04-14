@@ -19,12 +19,14 @@ package com.spotify.elitzur
 import com.spotify.elitzur.converters.avro.dynamic.{NullableElitzurMode, RecordValidatorProperty}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.helpers.{
+  CountryCode,
+  CountryCompanion,
   DynamicAccessorValidationHelpers,
   DynamicAccessorValidatorTestUtils
 }
 import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
 import com.spotify.elitzur.validators.Validator
-import com.spotify.elitzur.{CountryCodeTesting, CountryCodeTestingCompanion}
+
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -41,8 +43,8 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
   val userInput: Array[RecordValidatorProperty] = Array(
     RecordValidatorProperty(
       ".optRecord.optString",
-      CountryCodeTestingCompanion,
-      implicitly[Validator[Option[CountryCodeTesting]]].asInstanceOf[Validator[Any]],
+      CountryCompanion,
+      implicitly[Validator[Option[CountryCode]]].asInstanceOf[Validator[Any]],
       NullableElitzurMode
     )
   )
@@ -60,7 +62,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString", CountryCodeTestingCompanion)
+      ".optRecord.optString", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }
@@ -79,7 +81,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(inValidAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString", CountryCodeTestingCompanion)
+      ".optRecord.optString", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }

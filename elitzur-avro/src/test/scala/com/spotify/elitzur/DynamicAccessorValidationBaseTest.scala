@@ -19,14 +19,15 @@ package com.spotify.elitzur
 import com.spotify.elitzur.converters.avro.dynamic._
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
-import com.spotify.elitzur.helpers._
 import com.spotify.elitzur.schemas.{TestAvroArrayTypes, TestAvroTypes}
 import com.spotify.elitzur.validators.{BaseCompanion, Validator}
-import com.spotify.elitzur.{
-  CountryCodeTesting,
-  NonNegativeLongTesting,
-  CountryCodeTestingCompanion,
-  NonNegativeLongTestingCompanion
+import com.spotify.elitzur.helpers.{
+  CountryCode,
+  CountryCompanion,
+  NonNegativeLong,
+  NonNegativeLongCompanion,
+  DynamicAccessorValidationHelpers,
+  DynamicAccessorValidatorTestUtils
 }
 
 import org.scalatest.BeforeAndAfterEach
@@ -46,14 +47,14 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
   val userInput: Array[RecordValidatorProperty] = Array(
     RecordValidatorProperty(
       ".inner.playCount",
-      NonNegativeLongTestingCompanion,
-      implicitly[Validator[NonNegativeLongTesting]].asInstanceOf[Validator[Any]],
+      NonNegativeLongCompanion,
+      implicitly[Validator[NonNegativeLong]].asInstanceOf[Validator[Any]],
       BaseElitzurMode
     ),
     RecordValidatorProperty(
       ".inner.countryCode",
-      CountryCodeTestingCompanion,
-      implicitly[Validator[CountryCodeTesting]].asInstanceOf[Validator[Any]],
+      CountryCompanion,
+      implicitly[Validator[CountryCode]].asInstanceOf[Validator[Any]],
       BaseElitzurMode
     )
   )
@@ -67,10 +68,10 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.playCount", NonNegativeLongTestingCompanion)
+      ".inner.playCount", NonNegativeLongCompanion)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.countryCode", CountryCodeTestingCompanion)
+      ".inner.countryCode", CountryCompanion)
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((1, 0, 1, 0))
@@ -85,10 +86,10 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.playCount", NonNegativeLongTestingCompanion)
+      ".inner.playCount", NonNegativeLongCompanion)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.countryCode", CountryCodeTestingCompanion)
+      ".inner.countryCode", CountryCompanion)
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((0, 1, 0, 1))
@@ -97,9 +98,17 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
   it should "throw an exception if invalid input is provided" in {
     val invalidUserInput: Array[RecordValidatorProperty] = Array(
       RecordValidatorProperty(
-        "not.a.field", mock[BaseCompanion[_, _]], mock[Validator[Any]]),
+        "not.a.field",
+        mock[BaseCompanion[_, _]],
+        mock[Validator[Any]],
+        mock[ElitzurMode]
+      ),
       RecordValidatorProperty(
-        ".innerArrayRoot.deepNestedRecord", mock[BaseCompanion[_, _]], mock[Validator[Any]])
+        ".innerArrayRoot.deepNestedRecord",
+        mock[BaseCompanion[_, _]],
+        mock[Validator[Any]],
+        mock[ElitzurMode]
+      )
     )
 
     val thrown = intercept[Exception] {
