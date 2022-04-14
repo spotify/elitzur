@@ -30,7 +30,8 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 
 class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
   // Input expected to be in the format below
-  implicit val metricsReporter: MetricsReporter = DynamicAccessorValidatorTestUtils.metricsReporter()
+  implicit val metricsReporter: MetricsReporter =
+    DynamicAccessorValidatorTestUtils.metricsReporter()
 
   override def afterEach(): Unit = {
     metricsReporter.asInstanceOf[TestMetricsReporter].cleanSlate()
