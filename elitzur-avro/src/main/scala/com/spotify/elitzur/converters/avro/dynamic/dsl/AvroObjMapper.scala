@@ -90,8 +90,6 @@ case class Accessor(accessors: List[BaseAccessor]) {
   val accessorFn: Any => Any = accessors.combineFns
   val schema: Schema = accessors.innerSchema.getOrElse(
     throw new InvalidDynamicFieldException(NO_INTERNAL_SCHEMA))
-  val isNullable: Boolean = accessors.hasNullable
-  val isArray: Boolean = accessors.hasArray
 }
 
 case class AvroAccessorContainer(ops: BaseAccessor, schema: Schema, rest: Option[String])
