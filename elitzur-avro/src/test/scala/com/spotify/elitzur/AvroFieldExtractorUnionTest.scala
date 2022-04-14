@@ -29,7 +29,8 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
   it should "extract a null from an Union schema type" in {
     // Input: {"optRecord": null}
     // Output: null
-    val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$).accessorFn
+    val fn = AvroObjMapper.getAvroFun(
+      ".optRecord.optString", TestAvroUnionTypes.SCHEMA$).accessorFn
     val testNullRecord = TestAvroUnionTypes.newBuilder().setOptRecord(null).build
 
     fn(testNullRecord) should be (testNullRecord.getOptRecord)
@@ -38,7 +39,8 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
   it should "extract a null from a nested Union Avro schema type" in {
     // Input: {"optRecord": {"optString": null}}
     // Output: null
-    val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$).accessorFn
+    val fn = AvroObjMapper.getAvroFun(
+      ".optRecord.optString", TestAvroUnionTypes.SCHEMA$).accessorFn
     val testInnerNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()
@@ -53,7 +55,8 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
   it should "extract a primitive from a Union Avro schema type" in {
     // Input: {"optRecord": {"optString": "abc"}}
     // Output: "abc"
-    val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$).accessorFn
+    val fn = AvroObjMapper.getAvroFun(
+      ".optRecord.optString", TestAvroUnionTypes.SCHEMA$).accessorFn
     val testInnerNonNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()
@@ -67,7 +70,8 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
   it should "return null if child schema is non-nullable" in {
     // Input: {"optRecord": null}
     // Output: "null"
-    val fnNonNull = AvroObjMapper.getAvroFun(".optRecord.nonOptString", TestAvroUnionTypes.SCHEMA$).accessorFn
+    val fnNonNull = AvroObjMapper.getAvroFun(
+      ".optRecord.nonOptString", TestAvroUnionTypes.SCHEMA$).accessorFn
     val testNullRecord = TestAvroUnionTypes.newBuilder().setOptRecord(null).build
 
     fnNonNull(testNullRecord) should be (testNullRecord.getOptRecord)
