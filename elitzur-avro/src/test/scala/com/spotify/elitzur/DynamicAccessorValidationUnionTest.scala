@@ -24,6 +24,7 @@ import com.spotify.elitzur.helpers.{
 }
 import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
 import com.spotify.elitzur.validators.Validator
+import com.spotify.elitzur.{CountryCodeTesting, CountryCodeTestingCompanion}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

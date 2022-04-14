@@ -25,6 +25,8 @@ import com.spotify.elitzur.helpers.{
 import com.spotify.elitzur.helpers.SampleAvroRecords.testAvroArrayTypes
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
 import com.spotify.elitzur.validators.Validator
+import com.spotify.elitzur.{NonNegativeLongTesting, NonNegativeLongTestingCompanion}
+
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

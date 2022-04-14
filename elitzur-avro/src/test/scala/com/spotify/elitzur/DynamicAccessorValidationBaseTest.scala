@@ -22,6 +22,12 @@ import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetrics
 import com.spotify.elitzur.helpers._
 import com.spotify.elitzur.schemas.{TestAvroArrayTypes, TestAvroTypes}
 import com.spotify.elitzur.validators.{BaseCompanion, Validator}
+import com.spotify.elitzur.{
+  CountryCodeTesting,
+  NonNegativeLongTesting,
+  CountryCodeTestingCompanion,
+  NonNegativeLongTestingCompanion
+}
 
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
