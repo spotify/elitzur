@@ -18,7 +18,10 @@ package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.{ArrayElitzurMode, RecordValidatorProperty}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
-import com.spotify.elitzur.helpers.{DynamicAccessorValidationHelpers, DynamicAccessorValidatorTestUtils}
+import com.spotify.elitzur.helpers.{
+  DynamicAccessorValidationHelpers,
+  DynamicAccessorValidatorTestUtils
+}
 import com.spotify.elitzur.helpers.SampleAvroRecords.testAvroArrayTypes
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
 import com.spotify.elitzur.validators.Validator
@@ -30,7 +33,8 @@ import collection.JavaConverters._
 
 class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
   // Input expected to be in the format below
-  implicit val metricsReporter: MetricsReporter = DynamicAccessorValidatorTestUtils.metricsReporter()
+  implicit val metricsReporter: MetricsReporter =
+    DynamicAccessorValidatorTestUtils.metricsReporter()
 
   override def afterEach(): Unit = {
     metricsReporter.asInstanceOf[TestMetricsReporter].cleanSlate()

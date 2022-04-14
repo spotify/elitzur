@@ -30,7 +30,8 @@ class AvroFieldExtractorArrayTest extends AnyFlatSpec with Matchers {
   it should "extract generic records in an array" in {
     // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
     // Output: [{"userId": "one"}, {"userId": "two"}]
-    val fn = AvroObjMapper.getAvroFun(".innerArrayRoot[]", testArrayRecord.getSchema).accessorFn
+    val fn = AvroObjMapper.getAvroFun(
+      ".innerArrayRoot[]", testArrayRecord.getSchema).accessorFn
 
     fn(testArrayRecord) should be (testArrayRecord.getInnerArrayRoot)
   }
@@ -38,7 +39,8 @@ class AvroFieldExtractorArrayTest extends AnyFlatSpec with Matchers {
   it should "extract a field from generic records in an array" in {
     // Input: {"innerArrayRoot": [{"userId": "one"}, {"userId": "two"}]}
     // Output: ["one", "two"]
-    val fn = AvroObjMapper.getAvroFun(".innerArrayRoot[].userId", testArrayRecord.getSchema).accessorFn
+    val fn = AvroObjMapper.getAvroFun(
+      ".innerArrayRoot[].userId", testArrayRecord.getSchema).accessorFn
 
     fn(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getUserId).asJava)
@@ -67,7 +69,8 @@ class AvroFieldExtractorArrayTest extends AnyFlatSpec with Matchers {
       ".innerArrayRoot[].innerArrayInsideRecord[]", testArrayRecord.getSchema).accessorFn
 
     fn(testArrayRecord) should be (
-      testArrayRecord.getInnerArrayRoot.asScala.flatMap(_.getInnerArrayInsideRecord.asScala).asJava)
+      testArrayRecord.getInnerArrayRoot.asScala.flatMap(_.getInnerArrayInsideRecord.asScala).asJava
+    )
   }
 
   it should "not flatten the resulting array" in {
