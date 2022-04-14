@@ -16,12 +16,11 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic.RecordValidatorProperty
+import com.spotify.elitzur.converters.avro.dynamic.{NullableElitzurMode, RecordValidatorProperty}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.helpers.{DynamicAccessorValidationHelpers, DynamicAccessorValidatorTestUtils}
 import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
 import com.spotify.elitzur.validators.Validator
-
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -38,7 +37,8 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     RecordValidatorProperty(
       ".optRecord.optString",
       CountryCodeTestingCompanion,
-      implicitly[Validator[Option[CountryCodeTesting]]].asInstanceOf[Validator[Any]]
+      implicitly[Validator[Option[CountryCodeTesting]]].asInstanceOf[Validator[Any]],
+      NullableElitzurMode
     )
   )
 

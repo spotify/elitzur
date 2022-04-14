@@ -16,6 +16,7 @@
  */
 package com.spotify.elitzur.converters.avro.dynamic.dsl
 
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AccessorImplicits.AccessorFunctionUtils
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
 import org.apache.avro.Schema
 
@@ -28,7 +29,7 @@ object AvroObjMapper {
 
   def getAvroFun(avroFieldPath: String, schema: Schema): Accessor = {
     if (!mapToAvroFun.contains(avroFieldPath)) {
-      val accessor = Accessor(getAvroAccessors(avroFieldPath, schema))
+      val accessor = Accessor(getAvroAccessors(avroFieldPath, schema).map(_.ops))
       mapToAvroFun += (avroFieldPath -> accessor)
     }
     mapToAvroFun(avroFieldPath)
@@ -47,9 +48,6 @@ object AvroObjMapper {
       case _ => appendedAvroOp
     }
   }
-
-  private[dsl] def combineFns(fns: List[BaseAccessor]): Any => Any =
-    fns.map(_.fn).reduceLeftOption((f, g) => f andThen g).getOrElse(NoopAccessor().fn)
 }
 
 object AvroAccessorUtil {
@@ -88,52 +86,12 @@ object AvroAccessorUtil {
   }
 }
 
-case class Accessor(accessors: List[AvroAccessorContainer]) {
-  val accessorFn: Any => Any = combineFns(accessors.map(_.ops))
-
-  val schema: Schema = innerSchema(accessors.map(_.ops)).get
-
-  val isNullable: Boolean = hasNullable(accessors.map(_.ops))
-
-  val isArray: Boolean = hasArray(accessors.map(_.ops))
-
-  private[dsl] def innerSchema(ops: List[BaseAccessor]): Option[Schema] = {
-    ops.lastOption match {
-      case Some(n: NullableAccessor) => innerSchema(n.innerOps)
-      case Some(a: ArrayMapAccessor) => innerSchema(a.innerOps)
-      case Some(a: ArrayFlatmapAccessor) => innerSchema(a.innerOps)
-      case Some(a: ArrayNoopAccessor) => Some(a.schema)
-      case Some(i: IndexAccessor) => Some(i.schema)
-      case _ => None
-    }
-  }
-
-  private[dsl] def hasArray(ops: List[BaseAccessor]): Boolean = {
-    ops.foldLeft(false)((accBoolean, currAccessor) => {
-      val hasArrayAccessor = currAccessor match {
-        case n: NullableAccessor => hasArray(n.innerOps)
-        case _: ArrayMapAccessor | _: ArrayFlatmapAccessor | _: ArrayNoopAccessor  => true
-        case _ => false
-      }
-      accBoolean || hasArrayAccessor
-    })
-  }
-
-  private[dsl] def hasNullable(ops: List[BaseAccessor]): Boolean = {
-    ops.foldLeft(false)((accBoolean, currAccessor) => {
-      val hasNullableAccessor = currAccessor match {
-        case _: ArrayNoopAccessor => false
-        case _: NullableAccessor => true
-        case a: ArrayMapAccessor => hasNullable(a.innerOps)
-        case a: ArrayFlatmapAccessor => hasNullable(a.innerOps)
-        case _ => false
-      }
-      accBoolean || hasNullableAccessor
-    })
-  }
-
-  private[dsl] def combineFns(fns: List[BaseAccessor]): Any => Any =
-    fns.map(_.fn).reduceLeftOption((f, g) => f andThen g).getOrElse(NoopAccessor().fn)
+case class Accessor(accessors: List[BaseAccessor]) {
+  val accessorFn: Any => Any = accessors.combineFns
+  val schema: Schema = accessors.innerSchema.getOrElse(
+    throw new InvalidDynamicFieldException(NO_INTERNAL_SCHEMA))
+  val isNullable: Boolean = accessors.hasNullable
+  val isArray: Boolean = accessors.hasArray
 }
 
 case class AvroAccessorContainer(ops: BaseAccessor, schema: Schema, rest: Option[String])

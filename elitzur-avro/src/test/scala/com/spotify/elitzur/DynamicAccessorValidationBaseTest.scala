@@ -40,12 +40,14 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
     RecordValidatorProperty(
       ".inner.playCount",
       NonNegativeLongTestingCompanion,
-      implicitly[Validator[NonNegativeLongTesting]].asInstanceOf[Validator[Any]]
+      implicitly[Validator[NonNegativeLongTesting]].asInstanceOf[Validator[Any]],
+      BaseElitzurMode
     ),
     RecordValidatorProperty(
       ".inner.countryCode",
       CountryCodeTestingCompanion,
-      implicitly[Validator[CountryCodeTesting]].asInstanceOf[Validator[Any]]
+      implicitly[Validator[CountryCodeTesting]].asInstanceOf[Validator[Any]],
+      BaseElitzurMode
     )
   )
 

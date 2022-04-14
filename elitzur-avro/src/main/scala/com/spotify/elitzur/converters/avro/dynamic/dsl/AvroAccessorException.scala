@@ -37,6 +37,9 @@ object AvroAccessorException {
       |in the input.
       |""".stripMargin
 
+  final val NO_INTERNAL_SCHEMA =
+    "Unable to extract the schema for the last field provided in the path."
+
   object InvalidDynamicFieldException {
     def apply(errs: Array[Throwable], schema: Schema): InvalidDynamicFieldException = {
       val concatErrMsg: String = errs.map(err => "\t".concat(err.getMessage)).mkString(",\n")

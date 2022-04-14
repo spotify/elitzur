@@ -16,13 +16,12 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic.RecordValidatorProperty
+import com.spotify.elitzur.converters.avro.dynamic.{ArrayElitzurMode, RecordValidatorProperty}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.helpers.{DynamicAccessorValidationHelpers, DynamicAccessorValidatorTestUtils}
 import com.spotify.elitzur.helpers.SampleAvroRecords.testAvroArrayTypes
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
 import com.spotify.elitzur.validators.Validator
-
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -41,7 +40,8 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     RecordValidatorProperty(
       ".arrayLongs",
       NonNegativeLongTestingCompanion,
-      implicitly[Validator[Seq[NonNegativeLongTesting]]].asInstanceOf[Validator[Any]]
+      implicitly[Validator[Seq[NonNegativeLongTesting]]].asInstanceOf[Validator[Any]],
+      ArrayElitzurMode
     )
   )
 

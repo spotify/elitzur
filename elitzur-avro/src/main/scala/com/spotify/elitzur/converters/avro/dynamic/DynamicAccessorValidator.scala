@@ -17,6 +17,7 @@
 package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
+import com.spotify.elitzur.converters.avro.AvroElitzurConversionUtils.byteBufferToByteArray
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.validators.{
@@ -25,12 +26,13 @@ import com.spotify.elitzur.validators.{
   Unvalidated,
   Validator
 }
+
 import java.{util => ju}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 
-import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import scala.util.{Failure, Try}
+import scala.jdk.CollectionConverters._
 
 class DynamicAccessorValidator(validatorProperties: Array[RecordValidatorProperty], schema: Schema)
  (implicit metricsReporter: MetricsReporter) {
@@ -75,28 +77,29 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
     validatorProperty.accessorPath, schema)
 
   private val parsingFun: Any => Any = { fieldValue: Any =>
-    val isAvroString = DynamicFieldParserUtil.isAvroString(fieldAccessor.schema)
-    val fn = { x: Any => if (fieldAccessor.isNullable) {
-        if (isAvroString) {
-          Option(x).map(s => validatorProperty.companion.parseUnsafe(s.toString))
-        } else {
-          Option(x).map(validatorProperty.companion.parseUnsafe)
+    validatorProperty.mode match {
+      case ArrayElitzurMode =>
+        fieldValue.asInstanceOf[ju.List[Any]].asScala.map{
+          v => validatorProperty.companion.parseUnsafe(preprocessParse(v, fieldAccessor.schema))
         }
-      } else {
-        if (isAvroString) {
-          validatorProperty.companion.parseUnsafe(x.toString)
-        } else {
-          validatorProperty.companion.parseUnsafe(x)
+      case NullableElitzurMode =>
+        Option(fieldValue).map {
+          v => validatorProperty.companion.parseUnsafe(preprocessParse(v, fieldAccessor.schema))
         }
-      }
+      case BaseElitzurMode =>
+        validatorProperty.companion.parseUnsafe(preprocessParse(fieldValue, fieldAccessor.schema))
     }
+  }
 
-    if (fieldAccessor.isArray) {
-      fieldValue.asInstanceOf[ju.List[Any]].asScala.toList.map(fn)
-    } else {
-      fn(fieldValue)
+  // TODO: Optimize
+  private def preprocessParse(fieldValue: Any, schema: Schema): Any = {
+    schema.getType match {
+      case Schema.Type.STRING => fieldValue.toString
+      case Schema.Type.ENUM => fieldValue.toString
+      case Schema.Type.BYTES =>
+        byteBufferToByteArray(fieldValue.asInstanceOf[java.nio.ByteBuffer])
+      case _ => fieldValue
     }
-
   }
 
   def fieldParser(avroRecord: GenericRecord): Any = {
@@ -105,13 +108,14 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
   }
 }
 
-object DynamicFieldParserUtil {
-  def isAvroString(schema: Schema): Boolean = {
-    if (schema.getType == Schema.Type.STRING) { true }
-    else if (schema.getType == Schema.Type.UNION) { schema.getTypes.contains(Schema.Type.STRING) }
-    else { false }
-  }
-}
-
 case class RecordValidatorProperty(
-  accessorPath: String, companion: BaseCompanion[_, _], validator: Validator[Any])
+  accessorPath: String,
+  companion: BaseCompanion[_, _],
+  validator: Validator[Any],
+  mode: ElitzurMode
+)
+
+sealed trait ElitzurMode
+case object ArrayElitzurMode extends ElitzurMode
+case object NullableElitzurMode extends ElitzurMode
+case object BaseElitzurMode extends ElitzurMode

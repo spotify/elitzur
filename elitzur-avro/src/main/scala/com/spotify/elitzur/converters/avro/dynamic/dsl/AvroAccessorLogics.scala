@@ -16,9 +16,11 @@
  */
 package com.spotify.elitzur.converters.avro.dynamic.dsl
 
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AccessorImplicits.AccessorFunctionUtils
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorUtil.mapToAccessors
 import org.apache.avro.Schema
+
 import java.{util => ju}
 
 trait BaseAccessorLogic {
@@ -49,7 +51,7 @@ class NullableAccessorLogic(
       val recursiveResult = AvroObjMapper.getAvroAccessors(headAccessor.rest.get, innerSchema)
       // innerOps represents the list of all accessors to be applied if the avro obj is not null
       val innerOps = (headAccessor +: recursiveResult).map(_.ops)
-      NullableAccessor(field, innerOps, AvroObjMapper.combineFns(innerOps), innerSchema)
+      NullableAccessor(field, innerOps, innerOps.combineFns, innerSchema)
     } else {
       NullableAccessor(field, List(headAccessor.ops), headAccessor.ops.fn, innerSchema)
     }
@@ -80,7 +82,7 @@ class ArrayAccessorLogic(
       }
       val recursiveResult = AvroObjMapper.getAvroAccessors(fieldTokens.rest.get, innerSchema)
       // innerOps represents the list of accessors to be applied to each element in an array
-      val innerOps = AvroObjMapper.combineFns(recursiveResult.map(_.ops))
+      val innerOps = recursiveResult.map(_.ops).combineFns
       // flattenFlag is true if one of the internal operation types is a map based operation
       val flattenFlag = getFlattenFlag(recursiveResult.map(_.ops))
       if (flattenFlag) {
