@@ -24,7 +24,7 @@ import org.scalatest.matchers.should.Matchers
 
 import collection.JavaConverters._
 
-class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
+class AvroFieldExtractorArrayTest extends AnyFlatSpec with Matchers {
   val testArrayRecord: TestAvroArrayTypes = testAvroArrayTypes
 
   it should "extract generic records in an array" in {

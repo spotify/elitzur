@@ -75,8 +75,7 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
     validatorProperty.accessorPath, schema)
 
   private val parsingFun: Any => Any = { fieldValue: Any =>
-    val isAvroString = DynamicFieldParserUtil.isAvroString(schema)
-
+    val isAvroString = DynamicFieldParserUtil.isAvroString(fieldAccessor.schema)
     val fn = { x: Any => if (fieldAccessor.isNullable) {
         if (isAvroString) {
           Option(x).map(s => validatorProperty.companion.parseUnsafe(s.toString))
@@ -93,7 +92,7 @@ class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Sch
     }
 
     if (fieldAccessor.isArray) {
-      fieldValue.asInstanceOf[ju.List[Any]].asScala.toSeq.map(fn)
+      fieldValue.asInstanceOf[ju.List[Any]].asScala.toList.map(fn)
     } else {
       fn(fieldValue)
     }

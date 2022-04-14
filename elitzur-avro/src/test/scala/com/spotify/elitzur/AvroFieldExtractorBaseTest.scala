@@ -23,7 +23,7 @@ import org.scalatest.matchers.should.Matchers
 import org.apache.avro.SchemaBuilder
 import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 
-class AvroFieldExtractorSimpleTest extends AnyFlatSpec with Matchers {
+class AvroFieldExtractorBaseTest extends AnyFlatSpec with Matchers {
 
   it should "extract a primitive at the record root level" in {
     val testSimpleAvroRecord = innerNestedSample()

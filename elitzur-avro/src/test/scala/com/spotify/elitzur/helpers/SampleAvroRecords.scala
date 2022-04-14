@@ -23,9 +23,6 @@ import org.scalacheck.{Arbitrary, Gen}
 import com.spotify.ratatool.scalacheck._
 import collection.JavaConverters._
 
-case class OptFieldLong(optFieldLong: Option[Long])
-case class OptInnerField(optInnerField: Option[OptFieldLong])
-
 object SampleAvroRecords {
 
   def innerNestedSample(isValid: Boolean = true): InnerNestedType = avroOf[InnerNestedType]

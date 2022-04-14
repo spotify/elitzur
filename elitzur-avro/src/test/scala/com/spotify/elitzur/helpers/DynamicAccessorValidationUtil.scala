@@ -18,73 +18,17 @@
 package com.spotify.elitzur.helpers
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.types.Owner
+import com.spotify.elitzur.converters.avro.dynamic.{
+  DynamicAccessorValidator,
+  DynamicFieldParser,
+  RecordValidatorProperty
+}
 import com.spotify.elitzur.validators._
-
-import java.util.Locale
-
-
-case object Blizzard extends Owner {
-  override def name: String = "Blizzard"
-}
-
-case class NonNegativeLong(data: Long) extends BaseValidationType[Long] {
-  override def checkValid: Boolean = data >= 0L
-}
-
-object NonNegativeLongCompanion extends BaseCompanion[Long, NonNegativeLong] {
-  def validationType: String = "NonNegativeLong"
-
-  def bigQueryType: String = "INTEGER"
-
-  def apply(data: Long): NonNegativeLong = NonNegativeLong(data)
-
-  def parse(data: Long): NonNegativeLong = NonNegativeLong(data)
-
-  override def owner: Owner = Blizzard
-
-  override def description: String = "Non negative long"
-}
-
-case class NonNegativeDouble(data: Double) extends BaseValidationType[Double] {
-  override def checkValid: Boolean = data >= 0.0
-}
-
-object NonNegativeDoubleCompanion extends BaseCompanion[Double, NonNegativeDouble] {
-  def validationType: String = "NonNegativeDouble"
-
-  def bigQueryType: String = "FLOAT"
-
-  def apply(data: Double): NonNegativeDouble = NonNegativeDouble(data)
-
-  def parse(data: Double): NonNegativeDouble = NonNegativeDouble(data)
-
-  override def owner: Owner = Blizzard
-
-  override def description: String = "Non negative double"
-}
-
-case class CountryCode(data: String) extends BaseValidationType[String] {
-  override def checkValid: Boolean = Locale.getISOCountries.contains(data)
-}
-
-object CountryCompanion extends BaseCompanion[String, CountryCode] {
-  def validationType: String = "CountryCode"
-
-  def bigQueryType: String = "STRING"
-
-  def apply(data: String): CountryCode = CountryCode(data)
-
-  def parse(data: String): CountryCode = CountryCode(data)
-
-  def description: String = "Represents an ISO standard two-letter country code"
-
-  def owner: Owner = Blizzard
-}
+import org.apache.avro.Schema
 
 object DynamicAccessorValidatorTestUtils {
   class TestMetricsReporter extends MetricsReporter {
-    val map : scala.collection.mutable.Map[String, Int] =
+    val map: scala.collection.mutable.Map[String, Int] =
       scala.collection.mutable.Map[String, Int]().withDefaultValue(0)
     override def reportValid(className: String, fieldName: String, validationType: String): Unit =
       map(s"$className.$fieldName.$validationType.valid") += 1
@@ -95,7 +39,34 @@ object DynamicAccessorValidatorTestUtils {
       map(s"$className.$fieldName.$validationType.valid")
     def getInvalid(className: String, fieldName: String, validationType: String): Int =
       map(s"$className.$fieldName.$validationType.invalid")
+    def cleanSlate(): Unit = map.clear()
   }
 
   def metricsReporter(): MetricsReporter = new TestMetricsReporter
 }
+
+class DynamicAccessorValidationHelpers(
+  input: Array[RecordValidatorProperty], schema: Schema
+)(implicit metricsReporter: MetricsReporter){
+  // The following class generates the accessor function based on the user provided input and the
+  // Avro schema. It also uses the companion object provided in the input to determine how to
+  // validate a given field.
+  val dynamicRecordValidator = new DynamicAccessorValidator(input, schema)(metricsReporter)
+
+  def getFieldParser(input: String, c: BaseCompanion[_, _]): DynamicFieldParser = {
+    dynamicRecordValidator.fieldParsers
+      .find(x => x.fieldLabel == s"$input:${c.validationType}").get
+  }
+
+  def getValidAndInvalidCounts(input: String, c: BaseCompanion[_, _]): (Int, Int) = {
+    val parser = getFieldParser(input, c)
+    val m = metricsReporter.asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
+    val args = (
+      dynamicRecordValidator.className,
+      parser.fieldLabel,
+      s"${parser.fieldLabel.split(":")(1)}Testing"
+    )
+    ((m.getValid _).tupled(args), (m.getInvalid _).tupled(args))
+  }
+}
+
