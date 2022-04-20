@@ -16,7 +16,12 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser}
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
+import com.spotify.elitzur.converters.avro.dynamic.{
+  DynamicAccessorCompanion,
+  DynamicFieldParser,
+  Modifier
+}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
 import com.spotify.ratatool.scalacheck.avroOf
@@ -41,10 +46,10 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
   it should "correctly validate and invalidate elements in a list" in {
     val userInput: Array[DynamicFieldParser] = Array(
       new DynamicFieldParser(
-        ".arrayLongs",
-        "Seq[NonNegativeLong]",
+        ".arrayLongs:Seq[NonNegativeLong]",
         new DynamicAccessorCompanion[Long, NonNegativeLong],
-        TestAvroArrayTypes.SCHEMA$
+        Modifier.Seq,
+        AvroObjMapper.getAvroFun(".arrayLongs", TestAvroArrayTypes.SCHEMA$)
       )
     )
 
@@ -54,7 +59,7 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".arrayLongs", NonNegativeLongCompanion)
+      ".arrayLongs:Seq[NonNegativeLong]", NonNegativeLongCompanion)
 
     val (expectedValid, expectedInvalid) = validAvroRecord
       .getArrayLongs
@@ -69,10 +74,10 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
   it should "correctly validate and invalidate nullable elements in a list" in {
     val userInput: Array[DynamicFieldParser] = Array(
       new DynamicFieldParser(
-        ".arrayNullableStrings",
-        "Seq[Option[CountryCode]]",
+        ".arrayNullableStrings:Seq[Option[CountryCode]]",
         new DynamicAccessorCompanion[String, CountryCode],
-        TestAvroArrayTypes.SCHEMA$
+        Modifier.SeqOpt,
+        AvroObjMapper.getAvroFun(".arrayNullableStrings", TestAvroArrayTypes.SCHEMA$)
       )
     )
 
@@ -87,7 +92,7 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (countryCountValidCount, countryCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".arrayNullableStrings", CountryCompanion)
+      ".arrayNullableStrings:Seq[Option[CountryCode]]", CountryCompanion)
 
     (countryCountValidCount, countryCountInvalidCount) should be((2, 1))
   }

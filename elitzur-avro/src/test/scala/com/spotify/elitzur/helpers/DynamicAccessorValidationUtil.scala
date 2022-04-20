@@ -113,8 +113,7 @@ class DynamicAccessorValidationHelpers(
   input: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter){
   val dynamicRecordValidator = new DynamicAccessorValidator(input)(metricsReporter)
 
-  def getValidAndInvalidCounts(input: String, c: BaseCompanion[_, _]): (Int, Int) = {
-    val fieldLabel = s"$input:${c.validationType}"
+  def getValidAndInvalidCounts(fieldLabel: String, c: BaseCompanion[_, _]): (Int, Int) = {
     val m = metricsReporter.asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
     val args = (
       dynamicRecordValidator.className,

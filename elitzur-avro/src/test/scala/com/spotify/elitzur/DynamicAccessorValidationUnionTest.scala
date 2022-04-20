@@ -16,10 +16,14 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser}
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
+import com.spotify.elitzur.converters.avro.dynamic.{
+  DynamicAccessorCompanion,
+  DynamicFieldParser,
+  Modifier
+}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
-import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
-import com.spotify.elitzur.validators.Validator
+import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroTypes, TestAvroUnionTypes}
 
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
@@ -38,10 +42,10 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
 
   val userInput: Array[DynamicFieldParser] = Array(
     new DynamicFieldParser(
-      ".optRecord.optString",
-      "Option[CountryCode]",
+      ".optRecord.optString:Option[CountryCode]",
       new DynamicAccessorCompanion[String, CountryCode],
-      TestAvroUnionTypes.SCHEMA$
+      Modifier.Opt,
+      AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
     )
   )
 
@@ -58,7 +62,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString", CountryCompanion)
+      ".optRecord.optString:Option[CountryCode]", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }
@@ -77,7 +81,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(inValidAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString", CountryCompanion)
+      ".optRecord.optString:Option[CountryCode]", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }

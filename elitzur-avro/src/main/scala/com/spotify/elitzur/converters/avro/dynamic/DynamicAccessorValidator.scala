@@ -17,13 +17,11 @@
 package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
-import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 
 //scalastyle:off line.size.limit
-class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter) {
+class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter) extends Serializable {
 //scalastyle:on line.size.limit
   final val className: String = this.getClass.getName
 
@@ -39,20 +37,17 @@ class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit
 }
 
 class DynamicFieldParser(
-  fieldPathStr: String,
-  validationTypeStr: String,
+  accessorInput: String,
   accessorCompanion: DynamicAccessorCompanion[_, _],
-  schema: Schema
-) {
-  private val validatorModifier: Modifier = accessorCompanion.getModifier(validationTypeStr)
-  private val fieldAccessor = AvroObjMapper.getAvroFun(fieldPathStr, schema)
-
-  private[dynamic] val fieldLabel: String = s"$fieldPathStr:${accessorCompanion.validationType}"
-  private[dynamic] val fieldValidator: Validator[Any] =
-    accessorCompanion.getValidator(validatorModifier)
-  private[dynamic] val fieldFn: Any => Any =
+  validatorModifier: Modifier,
+  fieldAccessor: Any => Any
+)(implicit metricsReporter: MetricsReporter) extends Serializable {
+  private val fieldFn: Any => Any =
     accessorCompanion.getPreprocessorForValidator(validatorModifier)
 
+  private[dynamic] val fieldValidator: Validator[Any] =
+    accessorCompanion.getValidator(validatorModifier)
+  private[dynamic] val fieldLabel: String = accessorInput
   private[dynamic] def fieldParser(avroRecord: GenericRecord): Any = {
     val fieldValue = fieldAccessor(avroRecord)
     fieldFn(fieldValue)

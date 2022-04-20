@@ -16,7 +16,12 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic._
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
+import com.spotify.elitzur.converters.avro.dynamic.{
+  DynamicAccessorCompanion,
+  DynamicFieldParser,
+  Modifier
+}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.TestAvroTypes
 
@@ -37,16 +42,16 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
 
   val userInput: Array[DynamicFieldParser] = Array(
     new DynamicFieldParser(
-      ".inner.playCount",
-      "NonNegativeLong",
+      ".inner.playCount:NonNegativeLong",
       new DynamicAccessorCompanion[Long, NonNegativeLong],
-      TestAvroTypes.SCHEMA$
+      Modifier.None,
+      AvroObjMapper.getAvroFun(".inner.playCount", TestAvroTypes.SCHEMA$)
     ),
     new DynamicFieldParser(
-      ".inner.countryCode",
-      "CountryCode",
+      ".inner.countryCode:CountryCode",
       new DynamicAccessorCompanion[String, CountryCode],
-      TestAvroTypes.SCHEMA$
+      Modifier.None,
+      AvroObjMapper.getAvroFun(".inner.countryCode", TestAvroTypes.SCHEMA$)
     )
   )
 
@@ -59,10 +64,10 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.playCount", NonNegativeLongCompanion)
+      ".inner.playCount:NonNegativeLong", NonNegativeLongCompanion)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.countryCode", CountryCompanion)
+      ".inner.countryCode:CountryCode", CountryCompanion)
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((1, 0, 1, 0))
@@ -77,10 +82,10 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.playCount", NonNegativeLongCompanion)
+      ".inner.playCount:NonNegativeLong", NonNegativeLongCompanion)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.countryCode", CountryCompanion)
+      ".inner.countryCode:CountryCode", CountryCompanion)
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((0, 1, 0, 1))

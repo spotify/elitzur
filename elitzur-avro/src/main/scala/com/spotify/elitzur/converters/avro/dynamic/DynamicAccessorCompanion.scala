@@ -17,7 +17,6 @@
 package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.dynamic.DynamicAccessorException.InvalidModifierException
 import com.spotify.elitzur.converters.avro.AvroElitzurConversionUtils.byteBufferToByteArray
 import com.spotify.elitzur.validators.{
   BaseCompanion,
@@ -27,46 +26,28 @@ import com.spotify.elitzur.validators.{
 }
 
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.TypeTag
-import scala.reflect.runtime.universe.typeOf
-
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 import java.{util => ju}
 import collection.JavaConverters._
 
 //scalastyle:off line.size.limit structural.type
-class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag: ({type L[x] = SimpleCompanionImplicit[T, x]})#L](
-  implicit metricReporter: MetricsReporter) {
+class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag: ({type L[x] = SimpleCompanionImplicit[T, x]})#L] extends Serializable {
 //scalastyle:on line.size.limit structural.type
 
   private val companion: BaseCompanion[T, LT] =
     implicitly[SimpleCompanionImplicit[T, LT]].companion
   private[dynamic] val validationType: String = companion.validationType
 
-  private[dynamic] def getModifier(input: String): Modifier = {
-    if (!input.contains("[")) {
-      NoModifier
-    } else {
-      val validatorModifierStrArray: Array[String] = input.split("\\[").dropRight(1)
-
-      validatorModifierStrArray.mkString(".") match {
-        case "Option" => OptModifier
-        case "Seq" => SeqModifier
-        case "Seq.Option" => SeqOptModifier
-        case "Option.Seq" => OptSeqModifier
-        case "Option.Seq.Option" => OptSeqOptModifier
-        case _ => throw new InvalidModifierException("not supported modifier")
-      }
-    }
-  }
-
-  private[dynamic] def getValidator(modifier: Modifier): Validator[Any] = {
+  //scalastyle:off line.size.limit
+  private[dynamic] def getValidator(modifier: Modifier)(implicit metricReporter: MetricsReporter): Validator[Any] = {
+  //scalastyle:on line.size.limit
     modifier match {
-      case NoModifier => implicitly[Validator[LT]].asInstanceOf[Validator[Any]]
-      case OptModifier => implicitly[Validator[Option[LT]]].asInstanceOf[Validator[Any]]
-      case SeqModifier => implicitly[Validator[Seq[LT]]].asInstanceOf[Validator[Any]]
-      case SeqOptModifier => implicitly[Validator[Seq[Option[LT]]]].asInstanceOf[Validator[Any]]
-      case OptSeqModifier => implicitly[Validator[Option[Seq[LT]]]].asInstanceOf[Validator[Any]]
-      case OptSeqOptModifier =>
+      case Modifier.None => implicitly[Validator[LT]].asInstanceOf[Validator[Any]]
+      case Modifier.Opt => implicitly[Validator[Option[LT]]].asInstanceOf[Validator[Any]]
+      case Modifier.Seq => implicitly[Validator[Seq[LT]]].asInstanceOf[Validator[Any]]
+      case Modifier.SeqOpt => implicitly[Validator[Seq[Option[LT]]]].asInstanceOf[Validator[Any]]
+      case Modifier.OptSeq => implicitly[Validator[Option[Seq[LT]]]].asInstanceOf[Validator[Any]]
+      case Modifier.OptSeqOpt =>
         implicitly[Validator[Option[Seq[Option[LT]]]]].asInstanceOf[Validator[Any]]
     }
   }
@@ -77,12 +58,12 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
     def toArrayFn(v: Any, fn: Any => Any): Any = v.asInstanceOf[ju.List[Any]].asScala.map(fn)
 
     (fieldValue: Any) => modifier match {
-      case NoModifier => baseFn(fieldValue)
-      case OptModifier => toOptionFn(fieldValue, baseFn)
-      case SeqModifier => toArrayFn(fieldValue, baseFn)
-      case SeqOptModifier => toArrayFn(fieldValue, (v: Any) => toOptionFn(v, baseFn))
-      case OptSeqModifier => toOptionFn(fieldValue, (v: Any) => toArrayFn(v, baseFn))
-      case OptSeqOptModifier =>
+      case Modifier.None => baseFn(fieldValue)
+      case Modifier.Opt => toOptionFn(fieldValue, baseFn)
+      case Modifier.Seq => toArrayFn(fieldValue, baseFn)
+      case Modifier.SeqOpt => toArrayFn(fieldValue, (v: Any) => toOptionFn(v, baseFn))
+      case Modifier.OptSeq => toOptionFn(fieldValue, (v: Any) => toArrayFn(v, baseFn))
+      case Modifier.OptSeqOpt =>
         toOptionFn(fieldValue, (v: Any) => toArrayFn(v, (e: Any) => toOptionFn(e, baseFn)))
     }
   }
@@ -96,20 +77,13 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
     }
 }
 
-sealed trait Modifier
-private case object NoModifier extends Modifier
-private case object OptModifier extends Modifier
-private case object SeqModifier extends Modifier
-private case object SeqOptModifier extends Modifier
-private case object OptSeqModifier extends Modifier
-private case object OptSeqOptModifier extends Modifier
-
-object DynamicAccessorException {
-  class InvalidModifierException(modifier: String) extends Exception(
-    s"""
-      |Invalid input of $modifier detected for the validation setting. The available validation
-      |settings for a given ValidationType, VT, are: VT, Option[VT], Seq[VT], Seq[Option[VT]],
-      |Option[Seq[VT]] and Option[Seq[Option[VT]]]
-      |""".stripMargin
-  )
+sealed trait Modifier { val name: String }
+object Modifier {
+  case object None extends Modifier {override final val name: String = ""}
+  case object Opt extends Modifier {override final val name: String = "Option"}
+  case object Seq extends Modifier {override final val name: String = "Seq"}
+  case object SeqOpt extends Modifier {override final val name: String = "Seq.Option"}
+  case object OptSeq extends Modifier {override final val name: String = "Option.Seq"}
+  case object OptSeqOpt extends Modifier {override final val name: String = "Option.Seq.Option"}
+  val modifiers: Array[Modifier] = Array(None, Opt, Seq, SeqOpt, OptSeq, OptSeqOpt)
 }
