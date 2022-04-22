@@ -17,14 +17,11 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.converters.avro.dynamic.{
-  DynamicAccessorCompanion,
-  DynamicFieldParser,
-  Modifier
-}
+import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser, Modifier}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.TestAvroTypes
-
+import com.spotify.elitzur.validators.OptionValidator
+import com.spotify.elitzur.validators.Validator.wrapSeqLikeValidator
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -89,6 +86,15 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((0, 1, 0, 1))
+  }
+
+  it should "thingy" in {
+
+    val classz = new OptionValidator[NonNegativeLong]
+    val seqClass = wrapSeqLikeValidator(() => Seq.newBuilder[NonNegativeLong])
+
+    val optionSeqClass = new OptionValidator[]
+
   }
 
 }

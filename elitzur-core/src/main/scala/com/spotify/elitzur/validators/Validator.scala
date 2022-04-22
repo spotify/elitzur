@@ -152,19 +152,22 @@ private[elitzur] class WrappedValidator[T: Validator]
   override def shouldValidate: Boolean = true
 }
 
-private[elitzur] class OptionValidator[T: Validator]
-    extends Validator[Option[T]] {
+private[elitzur] class OptionValidator[T:  Validator] extends
+  OptionValidatorBase[T](implicitly[Validator[T]])
+
+private[elitzur] class OptionValidatorBase[T](validatorClass: Validator[T])
+  extends Validator[Option[T]] {
   override def validateRecord(
-      a: PreValidation[Option[T]],
-      path: String,
-      outermostClassName: Option[String],
-      config: ValidationRecordConfig
+    a: PreValidation[Option[T]],
+    path: String,
+    outermostClassName: Option[String],
+    config: ValidationRecordConfig
   ): PostValidation[Option[T]] = {
     val option = a.forceGet
     if (option.isEmpty) {
       Valid(None)
     } else {
-      implicitly[Validator[T]]
+      validatorClass
         .validateRecord(
           Unvalidated(a.forceGet.get),
           path,
@@ -181,9 +184,9 @@ private[elitzur] class OptionValidator[T: Validator]
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
-private[elitzur] class SeqLikeValidator[T: ClassTag: Validator, C[_]](
+private[elitzur] class SeqLikeValidator[T: ClassTag, C[_]](
     builderFn: () => mutable.Builder[T, C[T]]
-)(implicit reporter: MetricsReporter, toSeq: C[T] => IterableOnce[T])
+)(implicit reporter: MetricsReporter, toSeq: C[T] => IterableOnce[T], v: Validator[T])
     extends Validator[C[T]] {
   override def validateRecord(
       a: PreValidation[C[T]],
@@ -193,7 +196,6 @@ private[elitzur] class SeqLikeValidator[T: ClassTag: Validator, C[_]](
   ): PostValidation[C[T]] = {
     // Use mutable state for perf
     var atLeastOneInvalid = false
-    val v = implicitly[Validator[T]]
     val builder = builderFn()
     val fullPath =
       if (v.isInstanceOf[FieldValidator[_]]) {
@@ -405,14 +407,26 @@ object Validator extends Serializable {
 
   implicit def gen[T]: Validator[T] = macro ValidatorMacros.wrappedValidator[T]
 
-  private[validators] def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](
+
+  //(validatorClass: Validator[T])
+  private[elitzur] def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](
       builderFn: () => mutable.Builder[T, C[T]]
   )(
       implicit reporter: MetricsReporter,
       toSeq: C[T] => IterableOnce[T],
       ev: ClassTag[C[T]]
-  ): Validator[C[T]] = {
-    if (implicitly[Validator[T]].shouldValidate) {
+  ): Validator[C[T]] = wrapSeqLikeValidatorBase[T, C](implicitly[Validator[T]], builderFn)
+
+  private[elitzur] def wrapSeqLikeValidatorBase[T: ClassTag, C[_]](
+    validatorClass: Validator[T],
+    builderFn: () => mutable.Builder[T, C[T]]
+  )(
+    implicit reporter: MetricsReporter,
+    toSeq: C[T] => IterableOnce[T],
+    ev: ClassTag[C[T]]
+   ): Validator[C[T]] = {
+    if (validatorClass.shouldValidate) {
+      implicit val v: Validator[T] = validatorClass
       new SeqLikeValidator[T, C](builderFn)
     } else {
       new IgnoreValidator[C[T]]
