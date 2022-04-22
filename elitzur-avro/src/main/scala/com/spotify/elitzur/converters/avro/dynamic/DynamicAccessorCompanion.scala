@@ -38,6 +38,10 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
     implicitly[SimpleCompanionImplicit[T, LT]].companion
   private[dynamic] val validationType: String = companion.validationType
 
+  private def baseFn(v: Any): Any = parseAvro(v)
+  private def toOptionFn(v: Any, fn: Any => Any): Any = Option(v).map(fn)
+  private def toArrayFn(v: Any, fn: Any => Any): Any = v.asInstanceOf[ju.List[Any]].asScala.map(fn)
+
   //scalastyle:off line.size.limit
   private[dynamic] def getValidator(modifier: Modifier)(implicit metricReporter: MetricsReporter): Validator[Any] = {
   //scalastyle:on line.size.limit
@@ -53,10 +57,6 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
   }
 
   private[dynamic] def getPreprocessorForValidator(modifier: Modifier): Any => Any = {
-    def baseFn(v: Any): Any = parseAvro(v)
-    def toOptionFn(v: Any, fn: Any => Any): Any = Option(v).map(fn)
-    def toArrayFn(v: Any, fn: Any => Any): Any = v.asInstanceOf[ju.List[Any]].asScala.map(fn)
-
     (fieldValue: Any) => modifier match {
       case Modifier.None => baseFn(fieldValue)
       case Modifier.Opt => toOptionFn(fieldValue, baseFn)
@@ -70,20 +70,25 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
 
   private def parseAvro(o: Any): Any =
     typeOf[T] match {
+      // String in Avro can be stored as org.apache.avro.util.Utf8 (a subclass of Charsequence)
+      // which cannot be cast to String as-is. The toString method is added to ensure casting.
       case t if t =:= typeOf[String] => companion.parseUnsafe(o.toString)
+      // ByteBuffer in Avro to be converted into Array[Byte] which is the the format that Validation
+      // type expects the input the input to be in.
       case t if t =:= typeOf[Array[Byte]] => companion.parseUnsafe(
         byteBufferToByteArray(o.asInstanceOf[java.nio.ByteBuffer]))
       case _ => companion.parseUnsafe(o)
     }
 }
 
-sealed trait Modifier { val name: String }
+sealed trait Modifier { val name: Option[String] }
 object Modifier {
-  case object None extends Modifier {override final val name: String = ""}
-  case object Opt extends Modifier {override final val name: String = "Option"}
-  case object Seq extends Modifier {override final val name: String = "Seq"}
-  case object SeqOpt extends Modifier {override final val name: String = "Seq.Option"}
-  case object OptSeq extends Modifier {override final val name: String = "Option.Seq"}
-  case object OptSeqOpt extends Modifier {override final val name: String = "Option.Seq.Option"}
+  case object None extends Modifier {override final val name: Option[String] = Option.empty[String]}
+  case object Opt extends Modifier {override final val name: Option[String] = Some("Option")}
+  case object Seq extends Modifier {override final val name: Option[String] = Some("Seq")}
+  case object SeqOpt extends Modifier {override final val name: Option[String] = Some("Seq.Option")}
+  case object OptSeq extends Modifier {override final val name: Option[String] = Some("Option.Seq")}
+  case object OptSeqOpt extends Modifier {override final val name: Option[String] =
+    Some("Option.Seq.Option")}
   val modifiers: Array[Modifier] = Array(None, Opt, Seq, SeqOpt, OptSeq, OptSeqOpt)
 }
