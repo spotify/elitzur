@@ -17,11 +17,10 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser, Modifier}
+import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.TestAvroTypes
-import com.spotify.elitzur.validators.OptionValidator
-import com.spotify.elitzur.validators.Validator.wrapSeqLikeValidator
+
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -41,13 +40,11 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
     new DynamicFieldParser(
       ".inner.playCount:NonNegativeLong",
       new DynamicAccessorCompanion[Long, NonNegativeLong],
-      Modifier.None,
       AvroObjMapper.getAvroFun(".inner.playCount", TestAvroTypes.SCHEMA$)
     ),
     new DynamicFieldParser(
       ".inner.countryCode:CountryCode",
       new DynamicAccessorCompanion[String, CountryCode],
-      Modifier.None,
       AvroObjMapper.getAvroFun(".inner.countryCode", TestAvroTypes.SCHEMA$)
     )
   )
@@ -75,6 +72,8 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
 
     val validAvroRecord = helpers.SampleAvroRecords.testAvroTypes(isValid = false)
 
+    val abc = AvroObjMapper.getAvroFun(".inner.playCount", TestAvroTypes.SCHEMA$)
+
     // Validate the sample input
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
@@ -86,15 +85,6 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((0, 1, 0, 1))
-  }
-
-  it should "thingy" in {
-
-    val classz = new OptionValidator[NonNegativeLong]
-    val seqClass = wrapSeqLikeValidator(() => Seq.newBuilder[NonNegativeLong])
-
-    val optionSeqClass = new OptionValidator[]
-
   }
 
 }

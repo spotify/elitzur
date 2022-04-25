@@ -17,6 +17,8 @@
 package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
+import com.spotify.elitzur.converters.avro.dynamic.dsl.BaseAccessor
+import com.spotify.elitzur.converters.avro.dynamic.dsl.Implicits._
 import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
 import org.apache.avro.generic.GenericRecord
 
@@ -39,17 +41,15 @@ class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit
 class DynamicFieldParser(
   accessorInput: String,
   accessorCompanion: DynamicAccessorCompanion[_, _],
-  validatorModifier: Modifier,
-  fieldAccessor: Any => Any
+  accessorOps: List[BaseAccessor]
 )(implicit metricsReporter: MetricsReporter) extends Serializable {
-  private val fieldFn: Any => Any =
-    accessorCompanion.getPreprocessorForValidator(validatorModifier)
+  private val validatorOp = accessorOps.toValidatorOp
+  private val fieldFn: Any => Any = accessorCompanion.getPreprocessorForValidator(validatorOp)
 
-  private[dynamic] val fieldValidator: Validator[Any] =
-    accessorCompanion.getValidator(validatorModifier)
+  private[dynamic] val fieldValidator: Validator[Any] = accessorCompanion.getValidator(validatorOp)
   private[dynamic] val fieldLabel: String = accessorInput
   private[dynamic] def fieldParser(avroRecord: GenericRecord): Any = {
-    val fieldValue = fieldAccessor(avroRecord)
+    val fieldValue = accessorOps.combineFns(avroRecord)
     fieldFn(fieldValue)
   }
 }

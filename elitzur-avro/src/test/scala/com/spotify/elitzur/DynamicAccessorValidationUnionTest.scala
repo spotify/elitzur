@@ -19,11 +19,10 @@ package com.spotify.elitzur
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.converters.avro.dynamic.{
   DynamicAccessorCompanion,
-  DynamicFieldParser,
-  Modifier
+  DynamicFieldParser
 }
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
-import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroTypes, TestAvroUnionTypes}
+import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
 
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
@@ -42,9 +41,8 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
 
   val userInput: Array[DynamicFieldParser] = Array(
     new DynamicFieldParser(
-      ".optRecord.optString:Option[CountryCode]",
+      ".optRecord.optString:CountryCode",
       new DynamicAccessorCompanion[String, CountryCode],
-      Modifier.Opt,
       AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
     )
   )
@@ -62,7 +60,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString:Option[CountryCode]", CountryCompanion)
+      ".optRecord.optString:CountryCode", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }
@@ -81,7 +79,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(inValidAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString:Option[CountryCode]", CountryCompanion)
+      ".optRecord.optString:CountryCode", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }

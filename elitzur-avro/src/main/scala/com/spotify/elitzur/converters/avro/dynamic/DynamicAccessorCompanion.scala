@@ -18,12 +18,8 @@ package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
 import com.spotify.elitzur.converters.avro.AvroElitzurConversionUtils.byteBufferToByteArray
-import com.spotify.elitzur.validators.{
-  BaseCompanion,
-  BaseValidationType,
-  SimpleCompanionImplicit,
-  Validator
-}
+import com.spotify.elitzur.validators.Validator.wrapSeqLikeValidatorBase
+import com.spotify.elitzur.validators.{BaseCompanion, BaseValidationType, FieldValidator, OptionTypeBaseValidator, SimpleCompanionImplicit, Validator}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
@@ -50,49 +46,40 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
       case _ => companion.parseUnsafe(o)
     }
 
-  private def baseFn(v: Any): Any = parseAvro(v)
-  private def toOptionFn(v: Any, fn: Any => Any): Any = Option(v).map(fn)
-  private def toArrayFn(v: Any, fn: Any => Any): Any = v.asInstanceOf[ju.List[Any]].asScala.map(fn)
-
-  private[dynamic] def getPreprocessorForValidator(modifier: Modifier): Any => Any = {
-    (fieldValue: Any) => modifier match {
-      case Modifier.None => baseFn(fieldValue)
-      case Modifier.Opt => toOptionFn(fieldValue, baseFn)
-      case Modifier.Seq => toArrayFn(fieldValue, baseFn)
-      case Modifier.SeqOpt => toArrayFn(fieldValue, (v: Any) => toOptionFn(v, baseFn))
-      case Modifier.OptSeq => toOptionFn(fieldValue, (v: Any) => toArrayFn(v, baseFn))
-      case Modifier.OptSeqOpt =>
-        toOptionFn(fieldValue, (v: Any) => toArrayFn(v, (e: Any) => toOptionFn(e, baseFn)))
-    }
+  //scalastyle:off line.size.limit
+  private[dynamic] def getValidator(modifiers: List[ValidatorOp])(implicit m: MetricsReporter): Validator[Any] = {
+  //scalastyle:on line.size.limit
+    val baseValidator = implicitly[Validator[LT]].asInstanceOf[Validator[Any]]
+    modifiers.reverse.foldLeft(baseValidator)((a, c) => c.validatorOp(a))
   }
 
-  //scalastyle:off line.size.limit
-  private[dynamic] def getValidator(modifier: Modifier)(implicit metricReporter: MetricsReporter): Validator[Any] = {
-    //scalastyle:on line.size.limit
-    modifier match {
-      case Modifier.None => implicitly[Validator[LT]].asInstanceOf[Validator[Any]]
-      case Modifier.Opt => implicitly[Validator[Option[LT]]].asInstanceOf[Validator[Any]]
-      case Modifier.Seq => implicitly[Validator[Seq[LT]]].asInstanceOf[Validator[Any]]
-
-      case Modifier.SeqOpt => implicitly[Validator[Seq[Option[LT]]]].asInstanceOf[Validator[Any]]
-      case Modifier.OptSeq => implicitly[Validator[Option[Seq[LT]]]].asInstanceOf[Validator[Any]]
-      case Modifier.OptSeqOpt =>
-        implicitly[Validator[Option[Seq[Option[LT]]]]].asInstanceOf[Validator[Any]]
-    }
+  private[dynamic] def getPreprocessorForValidator(modifiers: List[ValidatorOp]): Any => Any = {
+    val baseFn: Any => Any = (v: Any) => parseAvro(v)
+    modifiers.reverse.foldLeft(baseFn)((a, c) => (v: Any) => c.preprocessorOp(v, a))
   }
 }
 
-sealed trait Modifier { val name: Option[String] }
-object Modifier {
-  case object None extends Modifier {override final val name: Option[String] = Option.empty[String]}
-  case object Opt extends Modifier {override final val name: Option[String] = Some("Option")}
-  case object Seq extends Modifier {override final val name: Option[String] = Some("Seq")}
-  case object SeqOpt extends Modifier {override final val name: Option[String] = Some("Seq.Option")}
-  case object OptSeq extends Modifier {override final val name: Option[String] = Some("Option.Seq")}
-  case object OptSeqOpt extends Modifier {override final val name: Option[String] =
-    Some("Option.Seq.Option")}
-  val modifiers: Array[Modifier] = Array(None, Opt, Seq, SeqOpt, OptSeq, OptSeqOpt)
 
-  val seqStuff = Array("Option", "Seq")
-  val seqStuff = Array("Option", "Seq", "Option")
+trait ValidatorOp {
+  def preprocessorOp(v: Any, fn: Any => Any): Any
+  def validatorOp[LT <: BaseValidationType[_]](
+    innerValidator: Validator[Any]
+  )(implicit m: MetricsReporter): Validator[Any]
+}
+
+object OptionValidatorOp extends ValidatorOp {
+  def preprocessorOp(v: Any, fn: Any => Any): Any = Option(v).map(fn)
+  def validatorOp[LT <: BaseValidationType[_]](
+    innerValidator: Validator[Any]
+  )(implicit m: MetricsReporter): Validator[Any] =
+    new OptionTypeBaseValidator[LT](innerValidator.asInstanceOf[FieldValidator[LT]])
+      .asInstanceOf[Validator[Any]]
+}
+
+case object ArrayValidatorOp extends ValidatorOp {
+  def preprocessorOp(v: Any, fn: Any => Any): Any = v.asInstanceOf[ju.List[Any]].asScala.map(fn)
+  def validatorOp[LT](
+    innerValidator: Validator[Any]
+  )(implicit m: MetricsReporter): Validator[Any] =
+    wrapSeqLikeValidatorBase(innerValidator, () => Seq.newBuilder[Any]).asInstanceOf[Validator[Any]]
 }

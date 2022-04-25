@@ -110,8 +110,12 @@ class StatusOptionTypeValidator[A <: BaseValidationType[_]: FieldValidator: Clas
 }
 
 private[elitzur] class OptionTypeValidator[A <: BaseValidationType[_]: FieldValidator: ClassTag]
-    extends FieldValidator[Option[A]] {
+  extends OptionTypeBaseValidator[A](implicitly[FieldValidator[A]])
 
+//scalastyle:off line.size.limit
+private[elitzur] class OptionTypeBaseValidator[A <: BaseValidationType[_]: FieldValidator: ClassTag](validatorClass: FieldValidator[A])
+  extends FieldValidator[Option[A]] {
+//scalastyle:on line.size.limit
   override def validationType: String = classTag[A].runtimeClass.getSimpleName
 
   override def validate(
@@ -121,7 +125,7 @@ private[elitzur] class OptionTypeValidator[A <: BaseValidationType[_]: FieldVali
     if (option.isEmpty) {
       Valid(Option.empty)
     } else {
-      implicitly[FieldValidator[A]]
+      validatorClass
         .validate(Unvalidated(option.get))
         .map(Option(_))
         .asInstanceOf[PostValidation[Option[A]]]
@@ -186,7 +190,7 @@ private[elitzur] class OptionValidatorBase[T](validatorClass: Validator[T])
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
 private[elitzur] class SeqLikeValidator[T: ClassTag, C[_]](
     builderFn: () => mutable.Builder[T, C[T]]
-)(implicit reporter: MetricsReporter, toSeq: C[T] => IterableOnce[T], v: Validator[T])
+)(implicit reporter: MetricsReporter, toSeq: C[T] => IterableOnce[T], validator: Validator[T])
     extends Validator[C[T]] {
   override def validateRecord(
       a: PreValidation[C[T]],
@@ -198,24 +202,24 @@ private[elitzur] class SeqLikeValidator[T: ClassTag, C[_]](
     var atLeastOneInvalid = false
     val builder = builderFn()
     val fullPath =
-      if (v.isInstanceOf[FieldValidator[_]]) {
+      if (validator.isInstanceOf[FieldValidator[_]]) {
         path
       } else {
         new JStringBuilder(path.length + 1).append(path).append(".").toString
       }
 
     toSeq(a.forceGet).iterator.foreach(ele => {
-      val res = if (v.isInstanceOf[FieldValidator[_]]) {
+      val res = if (validator.isInstanceOf[FieldValidator[_]]) {
         val c = config.fieldConfig(fullPath)
         validateField(
-          v.asInstanceOf[FieldValidator[T]],
+          validator.asInstanceOf[FieldValidator[T]],
           Unvalidated(ele),
           c,
           outermostClassName.get,
           fullPath
         )
       } else {
-        v.validateRecord(Unvalidated(ele), fullPath, outermostClassName, config)
+        validator.validateRecord(Unvalidated(ele), fullPath, outermostClassName, config)
       }
       if (!atLeastOneInvalid && res.isInvalid) {
         atLeastOneInvalid = true
@@ -426,7 +430,7 @@ object Validator extends Serializable {
     ev: ClassTag[C[T]]
    ): Validator[C[T]] = {
     if (validatorClass.shouldValidate) {
-      implicit val v: Validator[T] = validatorClass
+      implicit val validator: Validator[T] = validatorClass
       new SeqLikeValidator[T, C](builderFn)
     } else {
       new IgnoreValidator[C[T]]

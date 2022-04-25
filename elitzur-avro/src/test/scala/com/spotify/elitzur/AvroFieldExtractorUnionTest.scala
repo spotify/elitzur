@@ -17,6 +17,7 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
+import com.spotify.elitzur.converters.avro.dynamic.dsl.Implicits._
 import com.spotify.elitzur.helpers.SampleAvroRecords.innerNestedSample
 import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -32,7 +33,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
     val testNullRecord = TestAvroUnionTypes.newBuilder().setOptRecord(null).build
 
-    fn(testNullRecord) should be (testNullRecord.getOptRecord)
+    fn.combineFns(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
   it should "extract a null from a nested Union Avro schema type" in {
@@ -47,7 +48,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
           .build()
       ).build
 
-    fn(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
+    fn.combineFns(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
 
   it should "extract a primitive from a Union Avro schema type" in {
@@ -61,7 +62,8 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
           .setOptRepeatedArray(null).build()
       ).build
 
-    fn(testInnerNonNullRecord) should be (testInnerNonNullRecord.getOptRecord.getOptString)
+    fn.combineFns(testInnerNonNullRecord) should be
+      (testInnerNonNullRecord.getOptRecord.getOptString)
   }
 
   it should "return null if child schema is non-nullable" in {
@@ -70,7 +72,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
     val fnNonNull = AvroObjMapper.getAvroFun(".optRecord.nonOptString", TestAvroUnionTypes.SCHEMA$)
     val testNullRecord = TestAvroUnionTypes.newBuilder().setOptRecord(null).build
 
-    fnNonNull(testNullRecord) should be (testNullRecord.getOptRecord)
+    fnNonNull.combineFns(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
   it should "return the elements of an array if array is not null" in {
@@ -85,7 +87,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
           .setOptRepeatedArray(List(innerNestedSample()).asJava).build()
       ).build
 
-    fnArrayNull(testInnerNonNullRecord) should be (
+    fnArrayNull.combineFns(testInnerNonNullRecord) should be (
       testInnerNonNullRecord.getOptRecord.getOptRepeatedArray.asScala.map(_.getUserId).asJava)
   }
 
@@ -100,7 +102,7 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
           .setOptString(null)
           .setOptRepeatedArray(null).build()).build
 
-    fnArrayNull(testInnerNullRecord) should be (
+    fnArrayNull.combineFns(testInnerNullRecord) should be (
       testInnerNullRecord.getOptRecord.getOptRepeatedArray)
   }
 

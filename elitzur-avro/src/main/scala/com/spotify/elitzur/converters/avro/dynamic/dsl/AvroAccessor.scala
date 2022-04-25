@@ -16,11 +16,17 @@
  */
 package com.spotify.elitzur.converters.avro.dynamic.dsl
 
+import com.spotify.elitzur.converters.avro.dynamic.dsl.Implicits._
 import org.apache.avro.generic.GenericRecord
+
 import java.{util => ju}
 
 trait BaseAccessor {
   def fn: Any => Any
+}
+
+trait ArrayBaseAccessor extends BaseAccessor {
+  val innerOps: List[BaseAccessor]
 }
 
 case class NoopAccessor() extends BaseAccessor {
@@ -31,33 +37,37 @@ case class IndexAccessor(field: String) extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => o.asInstanceOf[GenericRecord].get(field)
 }
 
-case class NullableAccessor(field: String, innerOps: List[BaseAccessor], innerFn: Any => Any)
+case class NullableAccessor(field: String, innerOps: List[BaseAccessor])
   extends BaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
-    if (innerAvroObj == null) null else innerFn(o)
+    if (innerAvroObj == null) null else innerOps.combineFns(o)
   }
 }
 
-case class ArrayFlatmapAccessor(field: String, innerFn: Any => Any) extends BaseAccessor {
+case class ArrayFlatmapAccessor(field: String,  innerOps: List[BaseAccessor])
+  extends ArrayBaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
     val res = new ju.ArrayList[Any]
     innerAvroObj.asInstanceOf[ju.List[Any]].forEach(
-      elem => innerFn(elem).asInstanceOf[ju.List[Any]].forEach( x => res.add(x)))
+      elem => innerOps.combineFns(elem).asInstanceOf[ju.List[Any]].forEach(x => res.add(x))
+    )
     res
   }
 }
 
-case class ArrayMapAccessor(field: String, innerFn: Any => Any) extends BaseAccessor {
+case class ArrayMapAccessor(field: String, innerOps: List[BaseAccessor])
+  extends ArrayBaseAccessor {
   override def fn: Any => Any = (o: Any) => {
     val innerAvroObj = o.asInstanceOf[GenericRecord].get(field)
     val res = new ju.ArrayList[Any]
-    innerAvroObj.asInstanceOf[ju.List[Any]].forEach(elem => res.add(innerFn(elem)))
+    innerAvroObj.asInstanceOf[ju.List[Any]].forEach(elem => res.add(innerOps.combineFns(elem)))
     res
   }
 }
 
-case class ArrayNoopAccessor(field: String, flatten: Boolean) extends BaseAccessor {
+case class ArrayNoopAccessor(field: String, innerOps: List[BaseAccessor], flatten: Boolean)
+  extends ArrayBaseAccessor {
   override def fn: Any => Any = (o: Any) => IndexAccessor(field).fn(o)
 }

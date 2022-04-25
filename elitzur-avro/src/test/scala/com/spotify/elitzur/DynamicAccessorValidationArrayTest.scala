@@ -17,13 +17,10 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.converters.avro.dynamic.{
-  DynamicAccessorCompanion,
-  DynamicFieldParser,
-  Modifier
-}
+import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
+
 import com.spotify.ratatool.scalacheck.avroOf
 import com.spotify.ratatool.scalacheck._
 import org.scalatest.BeforeAndAfterEach
@@ -43,12 +40,11 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     metricsReporter.asInstanceOf[TestMetricsReporter].cleanSlate()
   }
 
-  it should "correctly validate and invalidate elements in a list" in {
+  it should "correctly validate and invalidate elements in a list (Seq)" in {
     val userInput: Array[DynamicFieldParser] = Array(
       new DynamicFieldParser(
-        ".arrayLongs:Seq[NonNegativeLong]",
+        ".arrayLongs:NonNegativeLong",
         new DynamicAccessorCompanion[Long, NonNegativeLong],
-        Modifier.Seq,
         AvroObjMapper.getAvroFun(".arrayLongs", TestAvroArrayTypes.SCHEMA$)
       )
     )
@@ -59,7 +55,7 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".arrayLongs:Seq[NonNegativeLong]", NonNegativeLongCompanion)
+      ".arrayLongs:NonNegativeLong", NonNegativeLongCompanion)
 
     val (expectedValid, expectedInvalid) = validAvroRecord
       .getArrayLongs
@@ -71,12 +67,11 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
       (expectedValid.length, expectedInvalid.length))
   }
 
-  it should "correctly validate and invalidate nullable elements in a list" in {
+  it should "correctly validate and invalidate nullable elements in a list (Seq.Option)" in {
     val userInput: Array[DynamicFieldParser] = Array(
       new DynamicFieldParser(
-        ".arrayNullableStrings:Seq[Option[CountryCode]]",
+        ".arrayNullableStrings:CountryCode",
         new DynamicAccessorCompanion[String, CountryCode],
-        Modifier.SeqOpt,
         AvroObjMapper.getAvroFun(".arrayNullableStrings", TestAvroArrayTypes.SCHEMA$)
       )
     )
@@ -92,7 +87,7 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (countryCountValidCount, countryCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".arrayNullableStrings:Seq[Option[CountryCode]]", CountryCompanion)
+      ".arrayNullableStrings:CountryCode", CountryCompanion)
 
     (countryCountValidCount, countryCountInvalidCount) should be((2, 1))
   }
