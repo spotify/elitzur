@@ -35,10 +35,10 @@ import scala.collection.compat.immutable.ArraySeq
 
 trait Validator[A] extends Serializable {
   def validateRecord(
-      a: PreValidation[A],
-      path: String = "",
-      outermostClassName: Option[String] = None,
-      config: ValidationRecordConfig = DefaultRecordConfig
+    a: PreValidation[A],
+    path: String = "",
+    outermostClassName: Option[String] = None,
+    config: ValidationRecordConfig = DefaultRecordConfig
   ): PostValidation[A]
 
   def shouldValidate: Boolean
@@ -50,10 +50,10 @@ abstract class FieldValidator[A: ClassTag] extends Validator[A] {
   def validationType: String = classTag[A].runtimeClass.getSimpleName
 
   override def validateRecord(
-      a: PreValidation[A],
-      path: String,
-      outermostClassName: Option[String],
-      config: ValidationRecordConfig
+    a: PreValidation[A],
+    path: String,
+    outermostClassName: Option[String],
+    config: ValidationRecordConfig
   ): PostValidation[A] =
     validate(a)
 
@@ -70,13 +70,13 @@ class IgnoreValidator[T: ClassTag] extends FieldValidator[T] {
 }
 
 private[elitzur] class StatusTypeValidator[A <: BaseValidationType[_]: FieldValidator: ClassTag]
-    extends FieldValidator[ValidationStatus[A]] {
+  extends FieldValidator[ValidationStatus[A]] {
   type WrappedType = ValidationStatus[A]
 
   override def validationType: String = classTag[A].runtimeClass.getSimpleName
 
   override def validate(
-      a: PreValidation[WrappedType]
+    a: PreValidation[WrappedType]
   ): PostValidation[WrappedType] =
     PostValidationWrapper(
       implicitly[FieldValidator[A]]
@@ -86,14 +86,14 @@ private[elitzur] class StatusTypeValidator[A <: BaseValidationType[_]: FieldVali
 
 private[elitzur]
 class StatusOptionTypeValidator[A <: BaseValidationType[_]: FieldValidator: ClassTag]
-    extends FieldValidator[ValidationStatus[Option[A]]]
+  extends FieldValidator[ValidationStatus[Option[A]]]
     with Serializable {
   type WrappedOption = ValidationStatus[Option[A]]
 
   override def validationType: String = classTag[A].runtimeClass.getSimpleName
 
   override def validate(
-      a: PreValidation[WrappedOption]
+    a: PreValidation[WrappedOption]
   ): PostValidation[WrappedOption] = {
     val option = a.forceGet.forceGet
     if (option.isEmpty) {
@@ -110,22 +110,18 @@ class StatusOptionTypeValidator[A <: BaseValidationType[_]: FieldValidator: Clas
 }
 
 private[elitzur] class OptionTypeValidator[A <: BaseValidationType[_]: FieldValidator: ClassTag]
-  extends OptionTypeBaseValidator[A](implicitly[FieldValidator[A]])
-
-//scalastyle:off line.size.limit
-private[elitzur] class OptionTypeBaseValidator[A <: BaseValidationType[_]: FieldValidator: ClassTag](validatorClass: FieldValidator[A])
   extends FieldValidator[Option[A]] {
-//scalastyle:on line.size.limit
+
   override def validationType: String = classTag[A].runtimeClass.getSimpleName
 
   override def validate(
-      a: PreValidation[Option[A]]
+    a: PreValidation[Option[A]]
   ): PostValidation[Option[A]] = {
     val option = a.forceGet
     if (option.isEmpty) {
       Valid(Option.empty)
     } else {
-      validatorClass
+      implicitly[FieldValidator[A]]
         .validate(Unvalidated(option.get))
         .map(Option(_))
         .asInstanceOf[PostValidation[Option[A]]]
@@ -136,12 +132,12 @@ private[elitzur] class OptionTypeBaseValidator[A <: BaseValidationType[_]: Field
 }
 
 private[elitzur] class WrappedValidator[T: Validator]
-    extends Validator[ValidationStatus[T]] {
+  extends Validator[ValidationStatus[T]] {
   override def validateRecord(
-      a: PreValidation[ValidationStatus[T]],
-      path: String,
-      outermostClassName: Option[String],
-      config: ValidationRecordConfig
+    a: PreValidation[ValidationStatus[T]],
+    path: String,
+    outermostClassName: Option[String],
+    config: ValidationRecordConfig
   ): PostValidation[ValidationStatus[T]] =
     PostValidationWrapper(
       implicitly[Validator[T]]
@@ -156,10 +152,7 @@ private[elitzur] class WrappedValidator[T: Validator]
   override def shouldValidate: Boolean = true
 }
 
-private[elitzur] class OptionValidator[T:  Validator] extends
-  OptionValidatorBase[T](implicitly[Validator[T]])
-
-private[elitzur] class OptionValidatorBase[T](validatorClass: Validator[T])
+private[elitzur] class OptionValidator[T: Validator]
   extends Validator[Option[T]] {
   override def validateRecord(
     a: PreValidation[Option[T]],
@@ -171,7 +164,7 @@ private[elitzur] class OptionValidatorBase[T](validatorClass: Validator[T])
     if (option.isEmpty) {
       Valid(None)
     } else {
-      validatorClass
+      implicitly[Validator[T]]
         .validateRecord(
           Unvalidated(a.forceGet.get),
           path,
@@ -188,38 +181,39 @@ private[elitzur] class OptionValidatorBase[T](validatorClass: Validator[T])
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
-private[elitzur] class SeqLikeValidator[T: ClassTag, C[_]](
-    builderFn: () => mutable.Builder[T, C[T]]
-)(implicit reporter: MetricsReporter, toSeq: C[T] => IterableOnce[T], validator: Validator[T])
-    extends Validator[C[T]] {
+private[elitzur] class SeqLikeValidator[T: ClassTag: Validator, C[_]](
+  builderFn: () => mutable.Builder[T, C[T]]
+)(implicit reporter: MetricsReporter, toSeq: C[T] => IterableOnce[T])
+  extends Validator[C[T]] {
   override def validateRecord(
-      a: PreValidation[C[T]],
-      path: String,
-      outermostClassName: Option[String],
-      config: ValidationRecordConfig
-  ): PostValidation[C[T]] = {
+               a: PreValidation[C[T]],
+               path: String,
+               outermostClassName: Option[String],
+               config: ValidationRecordConfig
+             ): PostValidation[C[T]] = {
     // Use mutable state for perf
     var atLeastOneInvalid = false
+    val v = implicitly[Validator[T]]
     val builder = builderFn()
     val fullPath =
-      if (validator.isInstanceOf[FieldValidator[_]]) {
+      if (v.isInstanceOf[FieldValidator[_]]) {
         path
       } else {
         new JStringBuilder(path.length + 1).append(path).append(".").toString
       }
 
     toSeq(a.forceGet).iterator.foreach(ele => {
-      val res = if (validator.isInstanceOf[FieldValidator[_]]) {
+      val res = if (v.isInstanceOf[FieldValidator[_]]) {
         val c = config.fieldConfig(fullPath)
         validateField(
-          validator.asInstanceOf[FieldValidator[T]],
+          v.asInstanceOf[FieldValidator[T]],
           Unvalidated(ele),
           c,
           outermostClassName.get,
           fullPath
         )
       } else {
-        validator.validateRecord(Unvalidated(ele), fullPath, outermostClassName, config)
+        v.validateRecord(Unvalidated(ele), fullPath, outermostClassName, config)
       }
       if (!atLeastOneInvalid && res.isInvalid) {
         atLeastOneInvalid = true
@@ -239,7 +233,7 @@ private[elitzur] class SeqLikeValidator[T: ClassTag, C[_]](
 }
 
 private[elitzur] class BaseFieldValidator[A <: BaseValidationType[_]: ClassTag]
-    extends FieldValidator[A] {
+  extends FieldValidator[A] {
 
   override def validationType: String = classTag[A].runtimeClass.getSimpleName
 
@@ -254,7 +248,7 @@ private[elitzur] class BaseFieldValidator[A <: BaseValidationType[_]: ClassTag]
 }
 
 private[elitzur] class DynamicValidator[A <: DynamicValidationType[_, _, _]: ClassTag]
-    extends FieldValidator[A] {
+  extends FieldValidator[A] {
   override def validationType: String = classTag[A].runtimeClass.getSimpleName
 
   override def validate(a: PreValidation[A]): PostValidation[A] = {
@@ -275,8 +269,8 @@ object Validator extends Serializable {
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
   def combine[T](
-      caseClass: CaseClass[Validator, T]
-  )(implicit reporter: MetricsReporter, tag: ClassTag[T]): Validator[T] = {
+                  caseClass: CaseClass[Validator, T]
+                )(implicit reporter: MetricsReporter, tag: ClassTag[T]): Validator[T] = {
     val params = caseClass.parameters
     var i = 0
     var shouldValidate = false
@@ -297,7 +291,7 @@ object Validator extends Serializable {
           path: String = "",
           outermostClassName: Option[String] = None,
           config: ValidationRecordConfig = DefaultRecordConfig
-      ): PostValidation[T] = {
+        ): PostValidation[T] = {
         sealedTrait.subtypes
           .flatMap { x =>
             // TODO: Same circular dereference/construction here
@@ -325,18 +319,18 @@ object Validator extends Serializable {
 
   //scalastyle:off method.length cyclomatic.complexity
   /**
-    * Core validation loop for both dynamic and derived validators
-    * This code is deliberately mutable, uses casts to avoid unboxing, and avoids dereferencing
-    * Ignore Validators in order to optimize speed at runtime
-    */
+   * Core validation loop for both dynamic and derived validators
+   * This code is deliberately mutable, uses casts to avoid unboxing, and avoids dereferencing
+   * Ignore Validators in order to optimize speed at runtime
+   */
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
   def validationLoop[T](
-      validatorAccessors: Array[ValidatorAccessor[Any]],
-      constructor: Seq[Any] => T,
-      outermostClassName: String,
-      path: String = "",
-      config: ValidationRecordConfig = DefaultRecordConfig
-  )(implicit reporter: MetricsReporter): PostValidation[T] = {
+         validatorAccessors: Array[ValidatorAccessor[Any]],
+         constructor: Seq[Any] => T,
+         outermostClassName: String,
+         path: String = "",
+         config: ValidationRecordConfig = DefaultRecordConfig
+       )(implicit reporter: MetricsReporter): PostValidation[T] = {
     val cs = new Array[Any](validatorAccessors.length)
     var i = 0
     var atLeastOneValid = false
@@ -363,18 +357,18 @@ object Validator extends Serializable {
             // we don't want to append a delimiter to leaf-field's path so we wait and branch the
             // logic within SeqLikeValidator
             val nextPath =
-              if (accessor.validator.isInstanceOf[SeqLikeValidator[_, Seq]]) {
-                new JStringBuilder(path.length + accessor.label.length)
-                  .append(path)
-                  .append(accessor.label)
-                  .toString
-              } else {
-                new JStringBuilder(path.length + accessor.label.length + 1)
-                  .append(path)
-                  .append(accessor.label)
-                  .append(".")
-                  .toString
-              }
+            if (accessor.validator.isInstanceOf[SeqLikeValidator[_, Seq]]) {
+              new JStringBuilder(path.length + accessor.label.length)
+                .append(path)
+                .append(accessor.label)
+                .toString
+            } else {
+              new JStringBuilder(path.length + accessor.label.length + 1)
+                .append(path)
+                .append(accessor.label)
+                .append(".")
+                .toString
+            }
             accessor.validator.validateRecord(
               Unvalidated(accessor.value),
               nextPath,
@@ -411,26 +405,14 @@ object Validator extends Serializable {
 
   implicit def gen[T]: Validator[T] = macro ValidatorMacros.wrappedValidator[T]
 
-
-  //(validatorClass: Validator[T])
-  private[elitzur] def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](
-      builderFn: () => mutable.Builder[T, C[T]]
-  )(
-      implicit reporter: MetricsReporter,
-      toSeq: C[T] => IterableOnce[T],
-      ev: ClassTag[C[T]]
-  ): Validator[C[T]] = wrapSeqLikeValidatorBase[T, C](implicitly[Validator[T]], builderFn)
-
-  private[elitzur] def wrapSeqLikeValidatorBase[T: ClassTag, C[_]](
-    validatorClass: Validator[T],
+  private[validators] def wrapSeqLikeValidator[T: ClassTag: Validator, C[_]](
     builderFn: () => mutable.Builder[T, C[T]]
   )(
-    implicit reporter: MetricsReporter,
-    toSeq: C[T] => IterableOnce[T],
-    ev: ClassTag[C[T]]
-   ): Validator[C[T]] = {
-    if (validatorClass.shouldValidate) {
-      implicit val validator: Validator[T] = validatorClass
+  implicit reporter: MetricsReporter,
+  toSeq: C[T] => IterableOnce[T],
+  ev: ClassTag[C[T]]
+                            ): Validator[C[T]] = {
+    if (implicitly[Validator[T]].shouldValidate) {
       new SeqLikeValidator[T, C](builderFn)
     } else {
       new IgnoreValidator[C[T]]
@@ -440,12 +422,12 @@ object Validator extends Serializable {
   // This logs metrics alongside validation. This is pulled out of the validation loop
   // because it needs to be used both on record fields and validation types in Seqs
   def validateField[T](
-      validator: FieldValidator[T],
-      value: PreValidation[T],
-      config: ValidationFieldConfig,
-      outermostClassName: String,
-      fieldName: String
-  )(implicit reporter: MetricsReporter): PostValidation[T] = {
+        validator: FieldValidator[T],
+        value: PreValidation[T],
+        config: ValidationFieldConfig,
+        outermostClassName: String,
+        fieldName: String
+      )(implicit reporter: MetricsReporter): PostValidation[T] = {
     val result = validator.validateRecord(value)
     val validationType = validator.validationType
 

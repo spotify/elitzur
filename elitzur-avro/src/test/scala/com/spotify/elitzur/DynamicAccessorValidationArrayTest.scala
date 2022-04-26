@@ -20,7 +20,6 @@ import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser}
 import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
-
 import com.spotify.ratatool.scalacheck.avroOf
 import com.spotify.ratatool.scalacheck._
 import org.scalatest.BeforeAndAfterEach
@@ -91,4 +90,5 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
 
     (countryCountValidCount, countryCountInvalidCount) should be((2, 1))
   }
+
 }

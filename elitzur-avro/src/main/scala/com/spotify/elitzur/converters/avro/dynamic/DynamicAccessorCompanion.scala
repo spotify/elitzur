@@ -18,8 +18,12 @@ package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
 import com.spotify.elitzur.converters.avro.AvroElitzurConversionUtils.byteBufferToByteArray
-import com.spotify.elitzur.validators.Validator.wrapSeqLikeValidatorBase
-import com.spotify.elitzur.validators.{BaseCompanion, BaseValidationType, FieldValidator, OptionTypeBaseValidator, SimpleCompanionImplicit, Validator}
+import com.spotify.elitzur.validators.{
+  BaseCompanion,
+  BaseValidationType,
+  SimpleCompanionImplicit,
+  Validator
+}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
@@ -46,11 +50,26 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
       case _ => companion.parseUnsafe(o)
     }
 
+  // TODO: Optimize below method by introducing changes to Elitzur-Core to allow non-implicit driven
+  // wiring of Validators
   //scalastyle:off line.size.limit
   private[dynamic] def getValidator(modifiers: List[ValidatorOp])(implicit m: MetricsReporter): Validator[Any] = {
   //scalastyle:on line.size.limit
-    val baseValidator = implicitly[Validator[LT]].asInstanceOf[Validator[Any]]
-    modifiers.reverse.foldLeft(baseValidator)((a, c) => c.validatorOp(a))
+    modifiers match {
+      case Nil => implicitly[Validator[LT]].asInstanceOf[Validator[Any]]
+      case OptionValidatorOp :: Nil => implicitly[Validator[Option[LT]]]
+        .asInstanceOf[Validator[Any]]
+      case ArrayValidatorOp :: Nil => implicitly[Validator[Seq[LT]]]
+        .asInstanceOf[Validator[Any]]
+      case ArrayValidatorOp :: OptionValidatorOp :: Nil => implicitly[Validator[Seq[Option[LT]]]]
+        .asInstanceOf[Validator[Any]]
+      case OptionValidatorOp :: ArrayValidatorOp :: Nil => implicitly[Validator[Option[Seq[LT]]]]
+        .asInstanceOf[Validator[Any]]
+      case OptionValidatorOp :: ArrayValidatorOp :: OptionValidatorOp :: Nil =>
+        implicitly[Validator[Option[Seq[Option[LT]]]]].asInstanceOf[Validator[Any]]
+      case _ => throw new Exception(s"Unsupported validator operation: ${modifiers.mkString(",")}")
+    }
+
   }
 
   private[dynamic] def getPreprocessorForValidator(modifiers: List[ValidatorOp]): Any => Any = {
@@ -59,27 +78,14 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
   }
 }
 
-
 trait ValidatorOp {
   def preprocessorOp(v: Any, fn: Any => Any): Any
-  def validatorOp[LT <: BaseValidationType[_]](
-    innerValidator: Validator[Any]
-  )(implicit m: MetricsReporter): Validator[Any]
 }
 
 object OptionValidatorOp extends ValidatorOp {
   def preprocessorOp(v: Any, fn: Any => Any): Any = Option(v).map(fn)
-  def validatorOp[LT <: BaseValidationType[_]](
-    innerValidator: Validator[Any]
-  )(implicit m: MetricsReporter): Validator[Any] =
-    new OptionTypeBaseValidator[LT](innerValidator.asInstanceOf[FieldValidator[LT]])
-      .asInstanceOf[Validator[Any]]
 }
 
 case object ArrayValidatorOp extends ValidatorOp {
   def preprocessorOp(v: Any, fn: Any => Any): Any = v.asInstanceOf[ju.List[Any]].asScala.map(fn)
-  def validatorOp[LT](
-    innerValidator: Validator[Any]
-  )(implicit m: MetricsReporter): Validator[Any] =
-    wrapSeqLikeValidatorBase(innerValidator, () => Seq.newBuilder[Any]).asInstanceOf[Validator[Any]]
 }
