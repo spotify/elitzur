@@ -37,17 +37,18 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
   private val companion: BaseCompanion[T, LT] =
     implicitly[SimpleCompanionImplicit[T, LT]].companion
   private[dynamic] val validationType: String = companion.validationType
+  private def parseUnsafe(data: Any): Any = companion.parse(data.asInstanceOf[T])
 
   private def parseAvro(o: Any): Any =
     typeOf[T] match {
       // String in Avro can be stored as org.apache.avro.util.Utf8 (a subclass of Charsequence)
       // which cannot be cast to String as-is. The toString method is added to ensure casting.
-      case t if t =:= typeOf[String] => companion.parseUnsafe(o.toString)
+      case t if t =:= typeOf[String] => parseUnsafe(o.toString)
       // ByteBuffer in Avro to be converted into Array[Byte] which is the the format that Validation
       // type expects the input the input to be in.
-      case t if t =:= typeOf[Array[Byte]] => companion.parseUnsafe(
+      case t if t =:= typeOf[Array[Byte]] => parseUnsafe(
         byteBufferToByteArray(o.asInstanceOf[java.nio.ByteBuffer]))
-      case _ => companion.parseUnsafe(o)
+      case _ => parseUnsafe(o)
     }
 
   // TODO: Optimize below method by introducing changes to Elitzur-Core to allow non-implicit driven
@@ -69,7 +70,6 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
         implicitly[Validator[Option[Seq[Option[LT]]]]].asInstanceOf[Validator[Any]]
       case _ => throw new Exception(s"Unsupported validator operation: ${modifiers.mkString(",")}")
     }
-
   }
 
   private[dynamic] def getPreprocessorForValidator(modifiers: List[ValidatorOp]): Any => Any = {
