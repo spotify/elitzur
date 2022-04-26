@@ -1,6 +1,10 @@
 package com.spotify.elitzur.converters.avro.dynamic.dsl
 
-import com.spotify.elitzur.converters.avro.dynamic.{ArrayValidatorOp, ValidatorOp, OptionValidatorOp}
+import com.spotify.elitzur.converters.avro.dynamic.{
+  ArrayValidatorOp,
+  OptionValidatorOp,
+  ValidatorOp
+}
 
 import scala.annotation.tailrec
 
