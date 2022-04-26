@@ -78,7 +78,7 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
   }
 }
 
-trait ValidatorOp {
+trait ValidatorOp extends Serializable {
   def preprocessorOp(v: Any, fn: Any => Any): Any
 }
 
