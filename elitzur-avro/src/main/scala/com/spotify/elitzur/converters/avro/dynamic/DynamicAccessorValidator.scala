@@ -58,8 +58,8 @@ class DynamicFieldParser(
   logger.info(
     s"""
        |The field validator input of '$accessorInput' resulted in:
-       |\tAccessors: ${accessorOps.accessors}
-       |\tValidators: ${validatorOp.map(_.getClass.getSimpleName)}
+       |\tAccessors: ${accessorOps.accessors.toString}
+       |\tValidators: ${validatorOp.map(_.getClass.getSimpleName).toString}
        |""".stripMargin
   )
 }
