@@ -22,14 +22,14 @@ import com.spotify.elitzur.converters.avro.dynamic.{
   ValidatorOp
 }
 import com.spotify.elitzur.converters.avro.dynamic.dsl.{
-  BaseAccessor,
-  IndexAccessor,
-  NullableAccessor,
-  ArrayMapAccessor,
   ArrayFlatmapAccessor,
-  ArrayNoopAccessor
+  ArrayMapAccessor,
+  ArrayNoopAccessor,
+  BaseAccessor,
+  FieldAccessor,
+  IndexAccessor,
+  NullableAccessor
 }
-import com.spotify.elitzur.converters.avro.dynamic.dsl.Implicits._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -38,7 +38,7 @@ class AccessorOpToValidatorOpTest extends AnyFlatSpec with Matchers {
 
   it should "single index accessor should correctly parse" in {
     val accessors: List[BaseAccessor] = List(IndexAccessor(DEFAULT_VALUE))
-    accessors.toValidatorOp should be (List.empty[ValidatorOp])
+    FieldAccessor(accessors).toValidatorOp should be (List.empty[ValidatorOp])
   }
 
   it should "subsequent nullable accessor should correctly parse" in {
@@ -48,7 +48,7 @@ class AccessorOpToValidatorOpTest extends AnyFlatSpec with Matchers {
           List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))
         ))
       ))
-    accessors.toValidatorOp should be (List(OptionValidatorOp))
+    FieldAccessor(accessors).toValidatorOp should be (List(OptionValidatorOp))
   }
 
   it should "map and nullable accessors should correctly parse" in {
@@ -58,7 +58,7 @@ class AccessorOpToValidatorOpTest extends AnyFlatSpec with Matchers {
           List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))
         )),
       flatten = false))
-    accessors.toValidatorOp should be (List(ArrayValidatorOp, OptionValidatorOp))
+    FieldAccessor(accessors).toValidatorOp should be (List(ArrayValidatorOp, OptionValidatorOp))
   }
 
   it should "only the first map should correctly parse" in {
@@ -69,7 +69,7 @@ class AccessorOpToValidatorOpTest extends AnyFlatSpec with Matchers {
             List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))))
         ))
       ))
-    accessors.toValidatorOp should be (List(ArrayValidatorOp, OptionValidatorOp))
+    FieldAccessor(accessors).toValidatorOp should be (List(ArrayValidatorOp, OptionValidatorOp))
   }
 
   it should "null accessors separated by a map accessor should correctly parse" in {
@@ -82,7 +82,8 @@ class AccessorOpToValidatorOpTest extends AnyFlatSpec with Matchers {
             ))))
         ))
       ))
-    accessors.toValidatorOp should be (List(OptionValidatorOp, ArrayValidatorOp, OptionValidatorOp))
+    FieldAccessor(accessors).toValidatorOp should be (
+      List(OptionValidatorOp, ArrayValidatorOp, OptionValidatorOp))
   }
 
 }

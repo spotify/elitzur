@@ -51,8 +51,8 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
       case _ => parseUnsafe(o)
     }
 
-  // TODO: Optimize below method by introducing changes to Elitzur-Core to allow non-implicit driven
-  // wiring of Validators
+  // TODO: Optimize the method below by introducing changes to Elitzur-Core to allow non-implicit
+  //  driven wiring of Validators
   //scalastyle:off line.size.limit
   private[dynamic] def getValidator(modifiers: List[ValidatorOp])(implicit m: MetricsReporter): Validator[Any] = {
   //scalastyle:on line.size.limit
@@ -72,6 +72,14 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
     }
   }
 
+  /**
+   *   The expected input for the dynamic Elitzur is in the form ".path.to.field:thisValidator".
+   *   The first part of the input (".path.to.field") is used by the DSL to generate an output
+   *   of Any. Before this output can be mapped to the Elitzur-Core's Validation loop, the output
+   *   should be wrapped inside of the validator object 'thisValidator'. A few example of what
+   *   the method below could output includes: thisValidator(Any), Some(thisValidator(Any)) and
+   *   List(thisValidator(Any)).
+   */
   private[dynamic] def getPreprocessorForValidator(modifiers: List[ValidatorOp]): Any => Any = {
     val baseFn: Any => Any = (v: Any) => parseAvro(v)
     modifiers.reverse.foldLeft(baseFn)((a, c) => (v: Any) => c.preprocessorOp(v, a))

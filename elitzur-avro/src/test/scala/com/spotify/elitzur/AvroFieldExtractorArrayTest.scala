@@ -17,7 +17,6 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.converters.avro.dynamic.dsl.Implicits._
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
 import helpers.SampleAvroRecords.testAvroArrayTypes
 import org.scalatest.flatspec.AnyFlatSpec

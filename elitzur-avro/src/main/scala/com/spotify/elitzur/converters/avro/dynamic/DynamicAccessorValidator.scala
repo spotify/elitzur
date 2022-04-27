@@ -17,10 +17,10 @@
 package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.dynamic.dsl.BaseAccessor
-import com.spotify.elitzur.converters.avro.dynamic.dsl.Implicits._
+import com.spotify.elitzur.converters.avro.dynamic.dsl.FieldAccessor
 import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
 import org.apache.avro.generic.GenericRecord
+import org.slf4j.LoggerFactory
 
 //scalastyle:off line.size.limit
 class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter) extends Serializable {
@@ -41,8 +41,10 @@ class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit
 class DynamicFieldParser(
   accessorInput: String,
   accessorCompanion: DynamicAccessorCompanion[_, _],
-  accessorOps: List[BaseAccessor]
+  accessorOps: FieldAccessor
 )(implicit metricsReporter: MetricsReporter) extends Serializable {
+  private val logger = LoggerFactory.getLogger(this.getClass)
+
   private val validatorOp = accessorOps.toValidatorOp
   private val fieldFn: Any => Any = accessorCompanion.getPreprocessorForValidator(validatorOp)
 
@@ -52,4 +54,12 @@ class DynamicFieldParser(
     val fieldValue = accessorOps.combineFns(avroRecord)
     fieldFn(fieldValue)
   }
+
+  logger.info(
+    s"""
+       |The field validator input of '$accessorInput' resulted in:
+       |\tAccessors: ${accessorOps.accessors}
+       |\tValidators: ${validatorOp.map(_.getClass.getSimpleName)}
+       |""".stripMargin
+  )
 }

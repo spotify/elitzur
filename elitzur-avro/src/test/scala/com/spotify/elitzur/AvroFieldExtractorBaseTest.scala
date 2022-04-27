@@ -17,12 +17,11 @@
 package com.spotify.elitzur
 
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.converters.avro.dynamic.dsl.Implicits._
 import helpers.SampleAvroRecords._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.apache.avro.SchemaBuilder
-import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
+import org.apache.avro.generic.GenericRecordBuilder
 
 class AvroFieldExtractorBaseTest extends AnyFlatSpec with Matchers {
 
