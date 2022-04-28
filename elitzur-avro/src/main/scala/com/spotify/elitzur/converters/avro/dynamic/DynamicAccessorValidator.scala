@@ -17,42 +17,17 @@
 package com.spotify.elitzur.converters.avro.dynamic
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.validators.{
-  BaseCompanion,
-  DynamicRecordValidator,
-  Unvalidated,
-  Validator
-}
-import org.apache.avro.Schema
+import com.spotify.elitzur.converters.avro.dynamic.dsl.FieldAccessor
+import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
 import org.apache.avro.generic.GenericRecord
+import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Try}
-
-class DynamicAccessorValidator(validatorProperties: Array[RecordValidatorProperty], schema: Schema)
- (implicit metricsReporter: MetricsReporter) {
+//scalastyle:off line.size.limit
+class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter) extends Serializable {
+//scalastyle:on line.size.limit
   final val className: String = this.getClass.getName
 
-  // From the user provided input, create a parser that can extract a value from a record and apply
-  // to it the the parsing rule defined in the companion object.
-  private[elitzur] val fieldParsers: Array[DynamicFieldParser] = {
-    val (successes, failures) = validatorProperties.map { r =>
-        Try(new DynamicFieldParser(r, schema)) match {
-          case Failure(e) => Failure(InvalidDynamicFieldException(e, r.accessorPath))
-          case s => s
-      }
-    }.partition(_.isSuccess)
-
-    if (!failures.isEmpty) {
-      throw InvalidDynamicFieldException(failures.flatMap(_.failed.toOption), schema)
-    }
-
-    successes.flatMap(_.toOption)
-  }
-
-  // Create a record validator that consists of all the field validators returned above
-  private val validator: DynamicRecordValidator = DynamicRecordValidator(
+  val validator: DynamicRecordValidator = DynamicRecordValidator(
     fieldParsers.map(_.fieldValidator),
     fieldParsers.map(_.fieldLabel)
   )
@@ -63,20 +38,28 @@ class DynamicAccessorValidator(validatorProperties: Array[RecordValidatorPropert
   }
 }
 
-class DynamicFieldParser(validatorProperty: RecordValidatorProperty, schema: Schema) {
-  private[elitzur] val fieldLabel: String =
-    s"${validatorProperty.accessorPath}:${validatorProperty.companion.validationType}"
+class DynamicFieldParser(
+  accessorInput: String,
+  accessorCompanion: DynamicAccessorCompanion[_, _],
+  accessorOps: FieldAccessor
+)(implicit metricsReporter: MetricsReporter) extends Serializable {
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
-  private[elitzur] val fieldValidator: Validator[Any] = validatorProperty.validator
+  private val validatorOp = accessorOps.toValidatorOp
+  private val fieldFn: Any => Any = accessorCompanion.getPreprocessorForValidator(validatorOp)
 
-  private val fieldAccessor: Any => Any = AvroObjMapper.getAvroFun(
-    validatorProperty.accessorPath, schema)
-
-  def fieldParser(avroRecord: GenericRecord): Any = {
-    val fieldValue = fieldAccessor(avroRecord)
-    validatorProperty.companion.parseUnsafe(fieldValue)
+  private[dynamic] val fieldValidator: Validator[Any] = accessorCompanion.getValidator(validatorOp)
+  private[dynamic] val fieldLabel: String = accessorInput
+  private[dynamic] def fieldParser(avroRecord: GenericRecord): Any = {
+    val fieldValue = accessorOps.combineFns(avroRecord)
+    fieldFn(fieldValue)
   }
-}
 
-case class RecordValidatorProperty(
-  accessorPath: String, companion: BaseCompanion[_, _], validator: Validator[Any])
+  logger.info(
+    s"""
+       |The field validator input of '$accessorInput' resulted in:
+       |\tAccessors: ${accessorOps.accessors.toString}
+       |\tValidators: ${validatorOp.map(_.getClass.getSimpleName).toString}
+       |""".stripMargin
+  )
+}

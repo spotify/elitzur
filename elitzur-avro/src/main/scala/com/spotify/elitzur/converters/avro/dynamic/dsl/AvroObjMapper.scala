@@ -24,12 +24,13 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 object AvroObjMapper {
-  private val mapToAvroFun: mutable.Map[String, Any => Any] = mutable.Map.empty[String, Any => Any]
+  private val mapToAvroFun: mutable.Map[String, FieldAccessor]
+    = mutable.Map.empty[String, FieldAccessor]
 
-  def getAvroFun(avroFieldPath: String, schema: Schema): Any => Any = {
+  def getAvroFun(avroFieldPath: String, schema: Schema): FieldAccessor = {
     if (!mapToAvroFun.contains(avroFieldPath)) {
-      val avroOperators = getAvroAccessors(avroFieldPath, schema).map(_.ops)
-      mapToAvroFun += (avroFieldPath -> combineFns(avroOperators))
+      val avroOperators = new FieldAccessor(getAvroAccessors(avroFieldPath, schema).map(_.ops))
+      mapToAvroFun += (avroFieldPath -> avroOperators)
     }
     mapToAvroFun(avroFieldPath)
   }
@@ -47,9 +48,6 @@ object AvroObjMapper {
       case _ => appendedAvroOp
     }
   }
-
-  private[dsl] def combineFns(fns: List[BaseAccessor]): Any => Any =
-    fns.map(_.fn).reduceLeftOption((f, g) => f andThen g).getOrElse(NoopAccessor().fn)
 }
 
 object AvroAccessorUtil {

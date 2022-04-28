@@ -18,15 +18,23 @@
 package com.spotify.elitzur.helpers
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.types.Owner
+import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorValidator, DynamicFieldParser}
 import com.spotify.elitzur.validators._
+import com.spotify.elitzur.types.Owner
 
 import java.util.Locale
-
 
 case object Blizzard extends Owner {
   override def name: String = "Blizzard"
 }
+
+object Companions {
+  implicit val ccC: SimpleCompanionImplicit[String, CountryCode] =
+    SimpleCompanionImplicit(CountryCompanion)
+  implicit val nnlC: SimpleCompanionImplicit[Long, NonNegativeLong] =
+    SimpleCompanionImplicit(NonNegativeLongCompanion)
+}
+
 
 case class NonNegativeLong(data: Long) extends BaseValidationType[Long] {
   override def checkValid: Boolean = data >= 0L
@@ -84,7 +92,7 @@ object CountryCompanion extends BaseCompanion[String, CountryCode] {
 
 object DynamicAccessorValidatorTestUtils {
   class TestMetricsReporter extends MetricsReporter {
-    val map : scala.collection.mutable.Map[String, Int] =
+    val map: scala.collection.mutable.Map[String, Int] =
       scala.collection.mutable.Map[String, Int]().withDefaultValue(0)
     override def reportValid(className: String, fieldName: String, validationType: String): Unit =
       map(s"$className.$fieldName.$validationType.valid") += 1
@@ -95,7 +103,24 @@ object DynamicAccessorValidatorTestUtils {
       map(s"$className.$fieldName.$validationType.valid")
     def getInvalid(className: String, fieldName: String, validationType: String): Int =
       map(s"$className.$fieldName.$validationType.invalid")
+    def cleanSlate(): Unit = map.clear()
   }
 
   def metricsReporter(): MetricsReporter = new TestMetricsReporter
 }
+
+class DynamicAccessorValidationHelpers(
+  input: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter){
+  val dynamicRecordValidator = new DynamicAccessorValidator(input)(metricsReporter)
+
+  def getValidAndInvalidCounts(fieldLabel: String, c: BaseCompanion[_, _]): (Int, Int) = {
+    val m = metricsReporter.asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]
+    val args = (
+      dynamicRecordValidator.className,
+      fieldLabel,
+      c.validationType
+    )
+    ((m.getValid _).tupled(args), (m.getInvalid _).tupled(args))
+  }
+}
+
