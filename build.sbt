@@ -25,12 +25,12 @@ val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
-val jodaTimeVersion = "2.10.13"
+val jodaTimeVersion = "2.10.14"
 val magnoliaVersion = "1.0.0-M4"
-val ratatoolVersion = "0.3.25"
+val ratatoolVersion = "0.3.26"
 val scalaCheckVersion = "1.14.3"
 val enumeratumVersion = "1.7.0"
-val scalaCollectionsCompatVersion = "2.6.0"
+val scalaCollectionsCompatVersion = "2.7.0"
 
 
 val disableWarts = Set(
