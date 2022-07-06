@@ -37,19 +37,23 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
   private val companion: BaseCompanion[T, LT] =
     implicitly[SimpleCompanionImplicit[T, LT]].companion
   private[dynamic] val validationType: String = companion.validationType
-  private def parseUnsafe(data: Any): Any = companion.parse(data.asInstanceOf[T])
+  private def parseUnsafe(v: Any): Any = companion.parse(v.asInstanceOf[T])
 
-  private def parseAvro(o: Any): Any =
+  // The transient lazy val is required here for lambda serialization. Details on the use of
+  // transient lazy val can be read here: https://www.lyh.me/lambda-serialization.html#.YsV9Z-zMJ6o
+  @transient private lazy val preParserProcessor: Any => Any =
     typeOf[T] match {
       // String in Avro can be stored as org.apache.avro.util.Utf8 (a subclass of Charsequence)
       // which cannot be cast to String as-is. The toString method is added to ensure casting.
-      case t if t =:= typeOf[String] => parseUnsafe(o.toString)
+      case t if t =:= typeOf[String] => (v: Any) => v.toString
       // ByteBuffer in Avro to be converted into Array[Byte] which is the the format that Validation
       // type expects the input the input to be in.
-      case t if t =:= typeOf[Array[Byte]] => parseUnsafe(
-        byteBufferToByteArray(o.asInstanceOf[java.nio.ByteBuffer]))
-      case _ => parseUnsafe(o)
+      case t if t =:= typeOf[Array[Byte]] =>
+        (v: Any) => byteBufferToByteArray(v.asInstanceOf[java.nio.ByteBuffer])
+      case _ => (v: Any) => v
     }
+
+  def parseAvro: Any => Any = (v: Any) => parseUnsafe(preParserProcessor(v))
 
   // TODO: Optimize the method below by introducing changes to Elitzur-Core to allow non-implicit
   //  driven wiring of Validators
@@ -81,10 +85,10 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
    *   List(thisValidator(Any)).
    */
   private[dynamic] def getPreprocessorForValidator(modifiers: List[ValidatorOp]): Any => Any = {
-    val baseFn: Any => Any = (v: Any) => parseAvro(v)
-    modifiers.reverse.foldLeft(baseFn)((a, c) => (v: Any) => c.preprocessorOp(v, a))
+    modifiers.reverse.foldLeft(parseAvro)((a, c) => (v: Any) => c.preprocessorOp(v, a))
   }
 }
+
 
 trait ValidatorOp extends Serializable {
   def preprocessorOp(v: Any, fn: Any => Any): Any
