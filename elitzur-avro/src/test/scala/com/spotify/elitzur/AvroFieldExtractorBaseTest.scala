@@ -16,6 +16,7 @@
  */
 package com.spotify.elitzur
 
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException.InvalidDynamicFieldException
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import helpers.SampleAvroRecords._
 import org.scalatest.flatspec.AnyFlatSpec
@@ -53,5 +54,14 @@ class AvroFieldExtractorBaseTest extends AnyFlatSpec with Matchers {
     val fn = AvroObjMapper.getAvroFun("._user_id10", testSimpleAvroRecord.getSchema)
 
     fn.combineFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.get("_user_id10"))
+  }
+
+  it should "throw an exception if the field is missing" in {
+    val testSimpleAvroRecord = testAvroTypes()
+    val thrown = intercept[InvalidDynamicFieldException] {
+      AvroObjMapper.getAvroFun(".notRealField", testSimpleAvroRecord.getSchema)
+    }
+
+    thrown.getMessage should include(".notRealField not found in")
   }
 }

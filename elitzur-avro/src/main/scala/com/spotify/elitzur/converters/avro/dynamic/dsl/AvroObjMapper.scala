@@ -22,6 +22,7 @@ import org.apache.avro.Schema
 import java.{util => ju}
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 object AvroObjMapper {
   private val mapToAvroFun: mutable.Map[String, FieldAccessor]
@@ -56,9 +57,13 @@ object AvroAccessorUtil {
 
   def mapToAccessors(path: String, schema: Schema): AvroAccessorContainer = {
     val fieldTokens = pathToTokens(path)
-    val fieldSchema = schema.getField(fieldTokens.field)
+    val fieldSchema = Try(schema.getField(fieldTokens.field).schema()) match {
+      case Success(s) => s
+      case Failure(_) =>
+        throw new InvalidDynamicFieldException(s"$path not found in ${schema.getFields}")
+    }
 
-    mapToAccessors(fieldSchema.schema, fieldTokens)
+    mapToAccessors(fieldSchema, fieldTokens)
   }
 
   def mapToAccessors(fieldSchema: Schema, fieldTokens: AvroFieldTokens): AvroAccessorContainer = {
