@@ -16,7 +16,7 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException.InvalidDynamicFieldException
+import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
 import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
 import helpers.SampleAvroRecords._
 import org.scalatest.flatspec.AnyFlatSpec
