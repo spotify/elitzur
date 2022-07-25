@@ -39,8 +39,6 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
   private[dynamic] val validationType: String = companion.validationType
   private def parseUnsafe(v: Any): Any = companion.parse(v.asInstanceOf[T])
 
-  // The transient lazy val is required here for lambda serialization. Details on the use of
-  // transient lazy val can be read here: https://www.lyh.me/lambda-serialization.html#.YsV9Z-zMJ6o
   @transient private lazy val preParserProcessor: Any => Any =
     typeOf[T] match {
       // String in Avro can be stored as org.apache.avro.util.Utf8 (a subclass of Charsequence)
