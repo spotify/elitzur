@@ -29,7 +29,7 @@ private[elitzur] object ValidatorMacros {
   def wrappedValidator[T: c.WeakTypeTag](c: whitebox.Context): c.Tree = {
     import c.universe._
 
-    val magTree = magnolia.Magnolia.gen[T](c)
+    val magTree = magnolia1.Magnolia.gen[T](c)
 
     def getLazyVal =
       magTree match {
