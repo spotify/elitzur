@@ -24,7 +24,7 @@ import com.spotify.scio.coders.Coder
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import com.spotify.elitzur.{Utils => SharedUtils}
-import magnolia._
+import magnolia1._
 import org.apache.avro.Schema
 import enumeratum._
 
@@ -378,7 +378,7 @@ final private[elitzur] case class DerivedConverter[T] private(caseClass: CaseCla
 object AvroConverter extends Serializable {
   type Typeclass[T] = AvroConverter[T]
 
-  def combine[T](cc: CaseClass[AvroConverter, T]): AvroConverter[T] = DerivedConverter(cc)
+  def join[T](cc: CaseClass[AvroConverter, T]): AvroConverter[T] = DerivedConverter(cc)
 
   implicit def gen[T]: AvroConverter[T] = macro ConverterMacros.wrappedRecordConverter[T]
 }
