@@ -89,7 +89,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.14", "2.13.10"),
+  crossScalaVersions := Seq("2.12.14", "2.13.6"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
