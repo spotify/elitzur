@@ -60,7 +60,7 @@ object AvroAccessorUtil {
     val fieldSchema = Try(schema.getField(fieldTokens.field).schema()) match {
       case Success(s) => s
       case Failure(_) =>
-        throw new InvalidDynamicFieldException(s"$path not found in ${schema.getFields}")
+        throw new InvalidDynamicFieldException(s"$path not found in ${schema.getFields.toString}")
     }
 
     mapToAccessors(fieldSchema, fieldTokens)
