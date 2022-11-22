@@ -24,7 +24,7 @@ object ConverterMacros {
   def wrappedRecordConverter[T: c.WeakTypeTag](c: whitebox.Context): c.Tree = {
     import c.universe._
 
-    val magTree = magnolia.Magnolia.gen[T](c)
+    val magTree = magnolia1.Magnolia.gen[T](c)
 
     def getLazyVal =
       magTree match {
@@ -47,14 +47,14 @@ object ConverterMacros {
             Apply(AppliedTypeTree(Select(pack, TypeName("CaseClass")), ps),
               List(typeName, isObject, isValueClass, params, q"""Array()"""))
 
-          case q"""new magnolia.CaseClass[$tc, $t]($typeName, $isObject, $isValueClass, $params, $_){ $body }""" =>
-            q"""_root_.magnolia.CaseClass[$tc, $t]($typeName, $isObject, $isValueClass, $params, Array()){ $body }"""
+          case q"""new magnolia1.CaseClass[$tc, $t]($typeName, $isObject, $isValueClass, $params, $_){ $body }""" =>
+            q"""_root_.magnolia1.CaseClass[$tc, $t]($typeName, $isObject, $isValueClass, $params, Array()){ $body }"""
 
-          case q"com.spotify.elitzur.AvroConverter.dispatch(new magnolia.SealedTrait($name, $subtypes, $_))" =>
-            q"_root_.com.spotify.elitzur.AvroConverter.dispatch(new magnolia.SealedTrait($name, $subtypes, Array()))"
+          case q"com.spotify.elitzur.AvroConverter.split(new magnolia1.SealedTrait($name, $subtypes, $_))" =>
+            q"_root_.com.spotify.elitzur.AvroConverter.split(new magnolia1.SealedTrait($name, $subtypes, Array()))"
 
-          case q"""magnolia.Magnolia.param[$tc, $t, $p]($name, $idx, $repeated, $tcParam, $defaultVal, $_)""" =>
-            q"""_root_.magnolia.Magnolia.param[$tc, $t, $p]($name, $idx, $repeated, $tcParam, $defaultVal, Array())"""
+          case q"""magnolia1.Magnolia.param[$tc, $t, $p]($name, $idx, $repeated, $tcParam, $defaultVal, $_)""" =>
+            q"""_root_.magnolia1.Magnolia.param[$tc, $t, $p]($name, $idx, $repeated, $tcParam, $defaultVal, Array())"""
 
           case _ =>
             super.transform(tree)

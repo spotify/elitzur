@@ -17,7 +17,7 @@
 package com.spotify.elitzur.validators
 
 import com.spotify.elitzur.MetricsReporter
-import magnolia._
+import magnolia1._
 
 
 @SuppressWarnings(Array("org.wartremover.warts.Var"))
