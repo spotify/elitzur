@@ -19,14 +19,14 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.11.4"
-val beamVersion = "2.35.0" // must stay in sync with scio
+val scioVersion = "0.11.12"
+val beamVersion = "2.41.0" // must stay in sync with scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.13"
-val magnoliaVersion = "1.0.0-M4"
+val magnoliaVersion = "1.1.2"
 val ratatoolVersion = "0.3.25"
 val scalaCheckVersion = "1.14.3"
 val enumeratumVersion = "1.7.0"
@@ -57,7 +57,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   releaseSettings ++ Seq(
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
-  scalaVersion          := "2.12.14",
+  scalaVersion          := "2.12.15",
   scalacOptions         ++= Seq(
     "-target:jvm-1.8",
     "-deprecation",
@@ -89,7 +89,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.14", "2.13.6"),
+  crossScalaVersions := Seq("2.12.15", "2.13.8"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -98,7 +98,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
     "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
     "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion % "test",
     "joda-time" % "joda-time" % jodaTimeVersion,
-    "com.softwaremill.magnolia" %% "magnolia-core" % magnoliaVersion,
+    "com.softwaremill.magnolia1_2" %% "magnolia" % magnoliaVersion,
     "com.beachape" %% "enumeratum" % enumeratumVersion,
     "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatVersion,
   ),
