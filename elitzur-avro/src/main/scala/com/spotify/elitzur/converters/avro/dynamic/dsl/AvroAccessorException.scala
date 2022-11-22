@@ -34,5 +34,4 @@ object AvroAccessorException {
       |Missing `[]` token for an array fields. All array fields should have `[]` token provided
       |in the input.
       |""".stripMargin
-
 }

@@ -11,6 +11,13 @@
       }
     },
     {
+      "name":"arrayNullableStrings",
+      "type":{
+        "type": "array",
+        "items": ["null", "string"]
+      }
+    },
+    {
       "name": "innerArrayRoot",
       "type": {
         "type": "array",

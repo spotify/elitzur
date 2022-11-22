@@ -22,14 +22,16 @@ import org.apache.avro.Schema
 import java.{util => ju}
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 object AvroObjMapper {
-  private val mapToAvroFun: mutable.Map[String, Any => Any] = mutable.Map.empty[String, Any => Any]
+  private val mapToAvroFun: mutable.Map[String, FieldAccessor]
+    = mutable.Map.empty[String, FieldAccessor]
 
-  def getAvroFun(avroFieldPath: String, schema: Schema): Any => Any = {
+  def getAvroFun(avroFieldPath: String, schema: Schema): FieldAccessor = {
     if (!mapToAvroFun.contains(avroFieldPath)) {
-      val avroOperators = getAvroAccessors(avroFieldPath, schema).map(_.ops)
-      mapToAvroFun += (avroFieldPath -> combineFns(avroOperators))
+      val avroOperators = new FieldAccessor(getAvroAccessors(avroFieldPath, schema).map(_.ops))
+      mapToAvroFun += (avroFieldPath -> avroOperators)
     }
     mapToAvroFun(avroFieldPath)
   }
@@ -47,9 +49,6 @@ object AvroObjMapper {
       case _ => appendedAvroOp
     }
   }
-
-  private[dsl] def combineFns(fns: List[BaseAccessor]): Any => Any =
-    fns.map(_.fn).reduceLeftOption((f, g) => f andThen g).getOrElse(NoopAccessor().fn)
 }
 
 object AvroAccessorUtil {
@@ -58,9 +57,13 @@ object AvroAccessorUtil {
 
   def mapToAccessors(path: String, schema: Schema): AvroAccessorContainer = {
     val fieldTokens = pathToTokens(path)
-    val fieldSchema = schema.getField(fieldTokens.field)
+    val fieldSchema = Try(schema.getField(fieldTokens.field).schema()) match {
+      case Success(s) => s
+      case Failure(_) =>
+        throw new InvalidDynamicFieldException(s"$path not found in ${schema.getFields.toString}")
+    }
 
-    mapToAccessors(fieldSchema.schema, fieldTokens)
+    mapToAccessors(fieldSchema, fieldTokens)
   }
 
   def mapToAccessors(fieldSchema: Schema, fieldTokens: AvroFieldTokens): AvroAccessorContainer = {

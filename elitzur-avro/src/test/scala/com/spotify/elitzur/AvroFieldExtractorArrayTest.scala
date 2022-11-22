@@ -24,7 +24,7 @@ import org.scalatest.matchers.should.Matchers
 
 import collection.JavaConverters._
 
-class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
+class AvroFieldExtractorArrayTest extends AnyFlatSpec with Matchers {
   val testArrayRecord: TestAvroArrayTypes = testAvroArrayTypes
 
   it should "extract generic records in an array" in {
@@ -32,7 +32,7 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
     // Output: [{"userId": "one"}, {"userId": "two"}]
     val fn = AvroObjMapper.getAvroFun(".innerArrayRoot[]", testArrayRecord.getSchema)
 
-    fn(testArrayRecord) should be (testArrayRecord.getInnerArrayRoot)
+    fn.combineFns(testArrayRecord) should be (testArrayRecord.getInnerArrayRoot)
   }
 
   it should "extract a field from generic records in an array" in {
@@ -40,7 +40,7 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
     // Output: ["one", "two"]
     val fn = AvroObjMapper.getAvroFun(".innerArrayRoot[].userId", testArrayRecord.getSchema)
 
-    fn(testArrayRecord) should be (
+    fn.combineFns(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getUserId).asJava)
   }
 
@@ -53,7 +53,7 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
     val fn = AvroObjMapper.getAvroFun(
       ".innerArrayRoot[].deepNestedRecord.recordId", testArrayRecord.getSchema)
 
-    fn(testArrayRecord) should be (
+    fn.combineFns(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getDeepNestedRecord.getRecordId).asJava)
   }
 
@@ -66,7 +66,7 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
     val fn = AvroObjMapper.getAvroFun(
       ".innerArrayRoot[].innerArrayInsideRecord[]", testArrayRecord.getSchema)
 
-    fn(testArrayRecord) should be (
+    fn.combineFns(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot.asScala.flatMap(_.getInnerArrayInsideRecord.asScala).asJava)
   }
 
@@ -79,7 +79,7 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
     val fn = AvroObjMapper.getAvroFun(
       ".innerArrayRoot[].innerArrayInsideRecord", testArrayRecord.getSchema)
 
-    fn(testArrayRecord) should be(
+    fn.combineFns(testArrayRecord) should be(
       testArrayRecord.getInnerArrayRoot.asScala.map(_.getInnerArrayInsideRecord).asJava)
   }
 
@@ -92,7 +92,7 @@ class AvroFieldExtractorNestedArrayTest extends AnyFlatSpec with Matchers {
     val fn = AvroObjMapper.getAvroFun(
       ".innerArrayRoot[].deeperArrayNestedRecord.DeeperArray[]", testArrayRecord.getSchema)
 
-    fn(testArrayRecord) should be (
+    fn.combineFns(testArrayRecord) should be (
       testArrayRecord.getInnerArrayRoot
         .asScala.flatMap(_.getDeeperArrayNestedRecord.getDeeperArray.asScala).asJava)
   }
