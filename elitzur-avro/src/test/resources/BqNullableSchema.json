@@ -1,0 +1,21 @@
+{
+    "fields": [
+        {
+            "mode": "NULLABLE",
+            "name": "optRecord",
+            "type": "RECORD",
+            "fields": [
+                {
+                    "mode": "NULLABLE",
+                    "name": "optString",
+                    "type": "STRING"
+                },
+                {
+                    "mode": "REQUIRED",
+                    "name": "nonOptString",
+                    "type": "STRING"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "fields": [
+        {
+            "mode": "REQUIRED",
+            "name": "inner",
+            "type": "RECORD",
+            "fields": [
+                {
+                    "mode": "REQUIRED",
+                    "name": "userId",
+                    "type": "STRING"
+                },
+                {
+                    "mode": "REQUIRED",
+                    "name": "countryCode",
+                    "type": "STRING"
+                },
+                {
+                    "mode": "REQUIRED",
+                    "name": "playCount",
+                    "type": "INTEGER"
+                }
+            ]
+        },
+        {
+            "mode": "REQUIRED",
+            "name": "userId",
+            "type": "STRING"
+        },
+        {
+            "mode": "REQUIRED",
+            "name": "_user_id10",
+            "type": "STRING"
+        }
+    ]
+}

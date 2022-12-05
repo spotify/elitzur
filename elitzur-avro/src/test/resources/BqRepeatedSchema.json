@@ -1,0 +1,50 @@
+{
+    "fields": [
+        {
+            "mode": "REPEATED",
+            "name": "arrayLongs",
+            "type": "INTEGER"
+        },
+        {
+            "mode": "REPEATED",
+            "name": "innerArrayRoot",
+            "type": "RECORD",
+            "fields": [
+                {
+                    "mode": "REPEATED",
+                    "name": "innerArrayInsideRecord",
+                    "type": "INTEGER"
+                },
+                {
+                    "mode": "REQUIRED",
+                    "name": "userId",
+                    "type": "STRING"
+                },
+                {
+                    "mode": "REQUIRED",
+                    "name": "deepNestedRecord",
+                    "type": "RECORD",
+                    "fields": [
+                        {
+                            "mode": "REQUIRED",
+                            "name": "recordId",
+                            "type": "INTEGER"
+                        }
+                    ]
+                },
+                {
+                    "mode": "NULLABLE",
+                    "name": "deeperArrayNestedRecord",
+                    "type": "RECORD",
+                    "fields": [
+                        {
+                            "mode": "REPEATED",
+                            "name": "DeeperArray",
+                            "type": "INTEGER"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
