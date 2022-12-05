@@ -14,21 +14,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.spotify.elitzur.converters.avro.dynamic
+package com.spotify.elitzur.converters.avro.dynamic.validator.core
 
 import com.spotify.elitzur.MetricsReporter
 import com.spotify.elitzur.converters.avro.AvroElitzurConversionUtils.byteBufferToByteArray
+import com.spotify.elitzur.converters.avro.dynamic.schema.SchemaType
 import com.spotify.elitzur.validators.{
   BaseCompanion,
   BaseValidationType,
   SimpleCompanionImplicit,
   Validator
 }
+import org.apache.avro.Schema
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
-import java.{util => ju}
-import collection.JavaConverters._
 
 //scalastyle:off line.size.limit structural.type
 class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag: ({type L[x] = SimpleCompanionImplicit[T, x]})#L] extends Serializable {
@@ -39,19 +39,22 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
   private[dynamic] val validationType: String = companion.validationType
   private def parseUnsafe(v: Any): Any = companion.parse(v.asInstanceOf[T])
 
-  @transient private lazy val preParserProcessor: Any => Any =
-    typeOf[T] match {
-      // String in Avro can be stored as org.apache.avro.util.Utf8 (a subclass of Charsequence)
-      // which cannot be cast to String as-is. The toString method is added to ensure casting.
-      case t if t =:= typeOf[String] => (v: Any) => v.toString
-      // ByteBuffer in Avro to be converted into Array[Byte] which is the the format that Validation
-      // type expects the input the input to be in.
-      case t if t =:= typeOf[Array[Byte]] =>
-        (v: Any) => byteBufferToByteArray(v.asInstanceOf[java.nio.ByteBuffer])
+  private def preProcessParser[R: SchemaType: TypeTag]: Any => Any = {
+    typeOf[R] match {
+      case r if r =:= typeOf[Schema] =>
+        typeOf[T] match {
+          // String in Avro can be stored as org.apache.avro.util.Utf8 (a subclass of Charsequence)
+          // which cannot be cast to String as-is. The toString method is added to ensure casting.
+          case t if t =:= typeOf[String] => (v: Any) => v.toString
+          // ByteBuffer in Avro to be converted into Array[Byte] which is the the format that
+          // Validation type expects the input to be in.
+          case t if t =:= typeOf[Array[Byte]] =>
+            (v: Any) => byteBufferToByteArray(v.asInstanceOf[java.nio.ByteBuffer])
+          case _ => (v: Any) => v
+        }
       case _ => (v: Any) => v
     }
-
-  def parseAvro: Any => Any = (v: Any) => parseUnsafe(preParserProcessor(v))
+  }
 
   // TODO: Optimize the method below by introducing changes to Elitzur-Core to allow non-implicit
   //  driven wiring of Validators
@@ -82,20 +85,11 @@ class DynamicAccessorCompanion[T: TypeTag, LT <: BaseValidationType[T]: ClassTag
    *   the method below could output includes: thisValidator(Any), Some(thisValidator(Any)) and
    *   List(thisValidator(Any)).
    */
-  private[dynamic] def getPreprocessorForValidator(modifiers: List[ValidatorOp]): Any => Any = {
-    modifiers.reverse.foldLeft(parseAvro)((a, c) => (v: Any) => c.preprocessorOp(v, a))
+  private[dynamic] def typedFieldValueFn[R: SchemaType: TypeTag](
+    modifiers: List[ValidatorOp]
+  ): Any => Any = {
+    val schemaBasedParser: Any => Any = preProcessParser[R]
+    val parseFieldValue: Any => Any = (v: Any) => parseUnsafe(schemaBasedParser(v))
+    modifiers.reverse.foldLeft(parseFieldValue)((a, c) => (v: Any) => c.preprocessorOp(v, a))
   }
-}
-
-
-trait ValidatorOp extends Serializable {
-  def preprocessorOp(v: Any, fn: Any => Any): Any
-}
-
-object OptionValidatorOp extends ValidatorOp {
-  def preprocessorOp(v: Any, fn: Any => Any): Any = Option(v).map(fn)
-}
-
-case object ArrayValidatorOp extends ValidatorOp {
-  def preprocessorOp(v: Any, fn: Any => Any): Any = v.asInstanceOf[ju.List[Any]].asScala.map(fn)
 }

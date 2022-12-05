@@ -14,22 +14,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.spotify.elitzur
+package com.spotify.elitzur.dynamic.avro
 
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorCompanion, DynamicFieldParser}
-import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
+import com.spotify.elitzur.MetricsReporter
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.FieldAccessor
+import com.spotify.elitzur.converters.avro.dynamic.validator.core.{
+  DynamicAccessorCompanion,
+  DynamicFieldParser
+}
+import com.spotify.elitzur.dynamic.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.TestAvroArrayTypes
 import com.spotify.ratatool.scalacheck.avroOf
 import com.spotify.ratatool.scalacheck._
+import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import collection.JavaConverters._
 
-class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
-  import com.spotify.elitzur.helpers._
+class AvroFieldValidationArrayTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
+  import com.spotify.elitzur.dynamic.helpers._
   import Companions._
 
   implicit val metricsReporter: MetricsReporter =
@@ -40,11 +46,11 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
   }
 
   it should "correctly validate and invalidate elements in a list (Seq)" in {
-    val userInput: Array[DynamicFieldParser] = Array(
+    val userInput: Array[DynamicFieldParser[Schema, GenericRecord]] = Array(
       new DynamicFieldParser(
         ".arrayLongs:NonNegativeLong",
         new DynamicAccessorCompanion[Long, NonNegativeLong],
-        AvroObjMapper.getAvroFun(".arrayLongs", TestAvroArrayTypes.SCHEMA$)
+        new FieldAccessor(TestAvroArrayTypes.SCHEMA$)
       )
     )
 
@@ -67,11 +73,11 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
   }
 
   it should "correctly validate and invalidate nullable elements in a list (Seq.Option)" in {
-    val userInput: Array[DynamicFieldParser] = Array(
+    val userInput: Array[DynamicFieldParser[Schema, GenericRecord]] = Array(
       new DynamicFieldParser(
         ".arrayNullableStrings:CountryCode",
         new DynamicAccessorCompanion[String, CountryCode],
-        AvroObjMapper.getAvroFun(".arrayNullableStrings", TestAvroArrayTypes.SCHEMA$)
+        new FieldAccessor(TestAvroArrayTypes.SCHEMA$)
       )
     )
 

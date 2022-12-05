@@ -14,9 +14,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.spotify.elitzur
+package com.spotify.elitzur.dynamic.avro
 
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.FieldAccessor
 import com.spotify.elitzur.helpers.SampleAvroRecords.innerNestedSample
 import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -24,21 +24,23 @@ import org.scalatest.matchers.should.Matchers
 
 import collection.JavaConverters._
 
-class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
+class AvroFieldAccessorUnionTest extends AnyFlatSpec with Matchers {
 
   it should "extract a null from an Union schema type" in {
     // Input: {"optRecord": null}
     // Output: null
-    val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
+    val fn = new FieldAccessor(TestAvroUnionTypes.SCHEMA$)
+      .getFieldAccessor(".optRecord.optString")
     val testNullRecord = TestAvroUnionTypes.newBuilder().setOptRecord(null).build
 
-    fn.combineFns(testNullRecord) should be (testNullRecord.getOptRecord)
+    fn.accessorFns(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
   it should "extract a null from a nested Union Avro schema type" in {
     // Input: {"optRecord": {"optString": null}}
     // Output: null
-    val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
+    val fn = new FieldAccessor(TestAvroUnionTypes.SCHEMA$)
+      .getFieldAccessor(".optRecord.optString")
     val testInnerNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()
@@ -47,13 +49,14 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
           .build()
       ).build
 
-    fn.combineFns(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
+    fn.accessorFns(testInnerNullRecord) should be (testInnerNullRecord.getOptRecord.getOptString)
   }
 
   it should "extract a primitive from a Union Avro schema type" in {
     // Input: {"optRecord": {"optString": "abc"}}
     // Output: "abc"
-    val fn = AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
+    val fn = new FieldAccessor(TestAvroUnionTypes.SCHEMA$)
+      .getFieldAccessor(".optRecord.optString")
     val testInnerNonNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()
@@ -61,24 +64,25 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
           .setOptRepeatedArray(null).build()
       ).build
 
-    fn.combineFns(testInnerNonNullRecord) should be
+    fn.accessorFns(testInnerNonNullRecord) should be
       (testInnerNonNullRecord.getOptRecord.getOptString)
   }
 
   it should "return null if child schema is non-nullable" in {
     // Input: {"optRecord": null}
     // Output: "null"
-    val fnNonNull = AvroObjMapper.getAvroFun(".optRecord.nonOptString", TestAvroUnionTypes.SCHEMA$)
+    val fnNonNull = new FieldAccessor(TestAvroUnionTypes.SCHEMA$)
+      .getFieldAccessor(".optRecord.nonOptString")
     val testNullRecord = TestAvroUnionTypes.newBuilder().setOptRecord(null).build
 
-    fnNonNull.combineFns(testNullRecord) should be (testNullRecord.getOptRecord)
+    fnNonNull.accessorFns(testNullRecord) should be (testNullRecord.getOptRecord)
   }
 
   it should "return the elements of an array if array is not null" in {
     // Input: {"optRecord": {"optRepeatedArray": [{"userId": "a", "countryCode": "US"}]}}
     // Output: "a"
-    val fnArrayNull = AvroObjMapper.getAvroFun(".optRecord.optRepeatedArray[].userId",
-      TestAvroUnionTypes.SCHEMA$)
+    val fnArrayNull = new FieldAccessor(TestAvroUnionTypes.SCHEMA$)
+      .getFieldAccessor(".optRecord.optRepeatedArray[].userId")
     val testInnerNonNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()
@@ -86,22 +90,22 @@ class AvroFieldExtractorUnionTest extends AnyFlatSpec with Matchers {
           .setOptRepeatedArray(List(innerNestedSample()).asJava).build()
       ).build
 
-    fnArrayNull.combineFns(testInnerNonNullRecord) should be (
+    fnArrayNull.accessorFns(testInnerNonNullRecord) should be (
       testInnerNonNullRecord.getOptRecord.getOptRepeatedArray.asScala.map(_.getUserId).asJava)
   }
 
   it should "return null if array is null" in {
     // Input: {"optRecord": {"optRepeatedArray": null}}
     // Output: null
-    val fnArrayNull = AvroObjMapper.getAvroFun(".optRecord.optRepeatedArray[].userId",
-      TestAvroUnionTypes.SCHEMA$)
+    val fnArrayNull = new FieldAccessor(TestAvroUnionTypes.SCHEMA$)
+      .getFieldAccessor(".optRecord.optRepeatedArray[].userId")
     val testInnerNullRecord = TestAvroUnionTypes.newBuilder()
       .setOptRecord(
         InnerComplexType.newBuilder()
           .setOptString(null)
           .setOptRepeatedArray(null).build()).build
 
-    fnArrayNull.combineFns(testInnerNullRecord) should be (
+    fnArrayNull.accessorFns(testInnerNullRecord) should be (
       testInnerNullRecord.getOptRecord.getOptRepeatedArray)
   }
 

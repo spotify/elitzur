@@ -14,22 +14,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.spotify.elitzur
+package com.spotify.elitzur.dynamic.avro
 
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import com.spotify.elitzur.converters.avro.dynamic.{
+import com.spotify.elitzur.MetricsReporter
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.FieldAccessor
+import com.spotify.elitzur.converters.avro.dynamic.validator.core.{
   DynamicAccessorCompanion,
   DynamicFieldParser
 }
-import com.spotify.elitzur.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
+import com.spotify.elitzur.dynamic.helpers.DynamicAccessorValidatorTestUtils.TestMetricsReporter
 import com.spotify.elitzur.schemas.{InnerComplexType, TestAvroUnionTypes}
-
+import org.apache.avro.Schema
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
-  import com.spotify.elitzur.helpers._
+class AvroFieldValidationUnionTest extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
+  import com.spotify.elitzur.dynamic.helpers._
   import Companions._
 
   implicit val metricsReporter: MetricsReporter =
@@ -39,11 +41,11 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     metricsReporter.asInstanceOf[TestMetricsReporter].cleanSlate()
   }
 
-  val userInput: Array[DynamicFieldParser] = Array(
+  val userInput: Array[DynamicFieldParser[Schema, GenericRecord]] = Array(
     new DynamicFieldParser(
       ".optRecord.optString:CountryCode",
       new DynamicAccessorCompanion[String, CountryCode],
-      AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
+      new FieldAccessor(TestAvroUnionTypes.SCHEMA$)
     )
   )
 

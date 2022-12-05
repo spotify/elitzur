@@ -16,17 +16,17 @@
  */
 package com.spotify.elitzur
 
-import com.spotify.elitzur.converters.avro.dynamic.{
+import com.spotify.elitzur.converters.avro.dynamic.validator.core.{
   ArrayValidatorOp,
   OptionValidatorOp,
-  ValidatorOp
+  ValidatorOp,
+  ValidatorOpsUtil
 }
-import com.spotify.elitzur.converters.avro.dynamic.dsl.{
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.{
   ArrayFlatmapAccessor,
   ArrayMapAccessor,
   ArrayNoopAccessor,
   BaseAccessor,
-  FieldAccessor,
   IndexAccessor,
   NullableAccessor
 }
@@ -34,55 +34,55 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AccessorOpToValidatorOpTest extends AnyFlatSpec with Matchers {
-  val DEFAULT_VALUE = ""
+  val noOpFn: Any => Any = (o: Any) => o
 
   it should "single index accessor should correctly parse" in {
-    val accessors: List[BaseAccessor] = List(IndexAccessor(DEFAULT_VALUE))
-    FieldAccessor(accessors).toValidatorOp should be (List.empty[ValidatorOp])
+    val accessors: List[BaseAccessor] = List(IndexAccessor(noOpFn))
+    ValidatorOpsUtil.toValidatorOp(accessors) should be (List.empty[ValidatorOp])
   }
 
   it should "subsequent nullable accessor should correctly parse" in {
     val accessors: List[BaseAccessor] =
-      List[BaseAccessor](NullableAccessor(DEFAULT_VALUE,
-        List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), NullableAccessor(DEFAULT_VALUE,
-          List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))
+      List[BaseAccessor](NullableAccessor(noOpFn,
+        List[BaseAccessor](IndexAccessor(noOpFn), NullableAccessor(noOpFn,
+          List[BaseAccessor](IndexAccessor(noOpFn))
         ))
       ))
-    FieldAccessor(accessors).toValidatorOp should be (List(OptionValidatorOp))
+    ValidatorOpsUtil.toValidatorOp(accessors) should be (List(OptionValidatorOp))
   }
 
   it should "map and nullable accessors should correctly parse" in {
     val accessors: List[BaseAccessor] =
-      List[BaseAccessor](ArrayNoopAccessor(DEFAULT_VALUE,
-        List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), NullableAccessor(DEFAULT_VALUE,
-          List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))
+      List[BaseAccessor](ArrayNoopAccessor(noOpFn,
+        List[BaseAccessor](IndexAccessor(noOpFn), NullableAccessor(noOpFn,
+          List[BaseAccessor](IndexAccessor(noOpFn))
         )),
       flatten = false))
-    FieldAccessor(accessors).toValidatorOp should be (List(ArrayValidatorOp, OptionValidatorOp))
+    ValidatorOpsUtil.toValidatorOp(accessors) should be (List(ArrayValidatorOp, OptionValidatorOp))
   }
 
   it should "only the first map should correctly parse" in {
     val accessors: List[BaseAccessor] =
-      List[BaseAccessor](ArrayFlatmapAccessor(DEFAULT_VALUE,
-        List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), NullableAccessor(DEFAULT_VALUE,
-          List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), ArrayMapAccessor(DEFAULT_VALUE,
-            List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))))
+      List[BaseAccessor](ArrayFlatmapAccessor(noOpFn,
+        List[BaseAccessor](IndexAccessor(noOpFn), NullableAccessor(noOpFn,
+          List[BaseAccessor](IndexAccessor(noOpFn), ArrayMapAccessor(noOpFn,
+            List[BaseAccessor](IndexAccessor(noOpFn))))
         ))
       ))
-    FieldAccessor(accessors).toValidatorOp should be (List(ArrayValidatorOp, OptionValidatorOp))
+    ValidatorOpsUtil.toValidatorOp(accessors) should be (List(ArrayValidatorOp, OptionValidatorOp))
   }
 
   it should "null accessors separated by a map accessor should correctly parse" in {
     val accessors: List[BaseAccessor] =
-      List[BaseAccessor](NullableAccessor(DEFAULT_VALUE,
-        List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), NullableAccessor(DEFAULT_VALUE,
-          List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), ArrayMapAccessor(DEFAULT_VALUE,
-            List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), NullableAccessor(DEFAULT_VALUE,
-              List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))
+      List[BaseAccessor](NullableAccessor(noOpFn,
+        List[BaseAccessor](IndexAccessor(noOpFn), NullableAccessor(noOpFn,
+          List[BaseAccessor](IndexAccessor(noOpFn), ArrayMapAccessor(noOpFn,
+            List[BaseAccessor](IndexAccessor(noOpFn), NullableAccessor(noOpFn,
+              List[BaseAccessor](IndexAccessor(noOpFn))
             ))))
         ))
       ))
-    FieldAccessor(accessors).toValidatorOp should be (
+    ValidatorOpsUtil.toValidatorOp(accessors) should be (
       List(OptionValidatorOp, ArrayValidatorOp, OptionValidatorOp))
   }
 

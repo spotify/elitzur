@@ -14,15 +14,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package com.spotify.elitzur.helpers
+package com.spotify.elitzur.dynamic.helpers
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.dynamic.{DynamicAccessorValidator, DynamicFieldParser}
+import com.spotify.elitzur.converters.avro.dynamic.schema.SchemaType
+import com.spotify.elitzur.converters.avro.dynamic.validator.core.RecordType
+import com.spotify.elitzur.converters.avro.dynamic.validator.core.{
+  DynamicAccessorValidator,
+  DynamicFieldParser
+}
 import com.spotify.elitzur.validators._
 import com.spotify.elitzur.types.Owner
 
 import java.util.Locale
+
+import scala.reflect.runtime.universe.TypeTag
 
 case object Blizzard extends Owner {
   override def name: String = "Blizzard"
@@ -109,9 +115,10 @@ object DynamicAccessorValidatorTestUtils {
   def metricsReporter(): MetricsReporter = new TestMetricsReporter
 }
 
-class DynamicAccessorValidationHelpers(
-  input: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter){
-  val dynamicRecordValidator = new DynamicAccessorValidator(input)(metricsReporter)
+class DynamicAccessorValidationHelpers[R: SchemaType: TypeTag, T: RecordType: TypeTag](
+  input: Array[DynamicFieldParser[R, T]]
+)(implicit metricsReporter: MetricsReporter){
+  val dynamicRecordValidator = new DynamicAccessorValidator[R, T](input)
 
   def getValidAndInvalidCounts(fieldLabel: String, c: BaseCompanion[_, _]): (Int, Int) = {
     val m = metricsReporter.asInstanceOf[DynamicAccessorValidatorTestUtils.TestMetricsReporter]

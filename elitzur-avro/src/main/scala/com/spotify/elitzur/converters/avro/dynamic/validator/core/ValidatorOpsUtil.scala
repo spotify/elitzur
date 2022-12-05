@@ -1,28 +1,25 @@
-package com.spotify.elitzur.converters.avro.dynamic.dsl
+package com.spotify.elitzur.converters.avro.dynamic.validator.core
 
-import com.spotify.elitzur.converters.avro.dynamic.{
-  ArrayValidatorOp,
-  OptionValidatorOp,
-  ValidatorOp
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.{
+  ArrayBaseAccessor,
+  BaseAccessor,
+  IndexAccessor,
+  NullableBaseAccessor
 }
 
 import scala.annotation.tailrec
 
-case class FieldAccessor(accessors: List[BaseAccessor]) extends Serializable {
-  def combineFns: Any => Any =
-    accessors.map(_.fn).reduceLeftOption((f, g) => f andThen g).getOrElse(NoopAccessor().fn)
-
-  def toValidatorOp: List[ValidatorOp] = toValidatorOp(this.accessors)
+object ValidatorOpsUtil extends Serializable {
 
   @tailrec
-  private def toValidatorOp(
-    ops: List[BaseAccessor],
+  def toValidatorOp(
+    accessorOps: List[BaseAccessor],
     modifiers: List[ValidatorOp] = List.empty[ValidatorOp]
   ): List[ValidatorOp] = {
-    if (ops.isEmpty) {
-      List.empty[ValidatorOp]
+    if (accessorOps.isEmpty) {
+      modifiers
     } else {
-      ops.lastOption.get match {
+      accessorOps.lastOption.get match {
         case n: NullableBaseAccessor =>
           // A sequence of options can be reduce to a single option operation
           if (modifiers.lastOption.contains(OptionValidatorOp)) {
@@ -43,3 +40,5 @@ case class FieldAccessor(accessors: List[BaseAccessor]) extends Serializable {
     }
   }
 }
+
+

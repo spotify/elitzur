@@ -14,52 +14,61 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.spotify.elitzur
+package com.spotify.elitzur.dynamic.avro
 
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroAccessorException._
-import com.spotify.elitzur.converters.avro.dynamic.dsl.AvroObjMapper
-import helpers.SampleAvroRecords._
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.SchemaToAccessorOpsExceptionMsg._
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.FieldAccessor
+import com.spotify.elitzur.helpers.SampleAvroRecords.{
+  innerNestedSample,
+  testAvroArrayTypes,
+  testAvroTypes
+}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.apache.avro.SchemaBuilder
 import org.apache.avro.generic.GenericRecordBuilder
 
-class AvroFieldExtractorBaseTest extends AnyFlatSpec with Matchers {
+class AvroFieldAccessorBaseTest extends AnyFlatSpec with Matchers {
 
   it should "extract a primitive at the record root level" in {
     val testSimpleAvroRecord = innerNestedSample()
-    val fn = AvroObjMapper.getAvroFun(".userId", testSimpleAvroRecord.getSchema)
+    val fn = new FieldAccessor(testSimpleAvroRecord.getSchema)
+      .getFieldAccessor(".userId")
 
-    fn.combineFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.getUserId)
+    fn.accessorFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.getUserId)
   }
 
   it should "extract an array at the record root level" in {
     val testSimpleAvroRecord = testAvroArrayTypes
-    val fn = AvroObjMapper.getAvroFun(".arrayLongs", testSimpleAvroRecord.getSchema)
+    val fn = new FieldAccessor(testSimpleAvroRecord.getSchema)
+      .getFieldAccessor(".arrayLongs")
 
-    fn.combineFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.getArrayLongs)
+    fn.accessorFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.getArrayLongs)
   }
 
   it should "extract a nested record" in {
     val testSimpleAvroRecord = testAvroTypes()
-    val fn = AvroObjMapper.getAvroFun(".inner.userId", testSimpleAvroRecord.getSchema)
+    val fn = new FieldAccessor(testSimpleAvroRecord.getSchema)
+      .getFieldAccessor(".inner.userId")
 
-    fn.combineFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInner.getUserId)
+    fn.accessorFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.getInner.getUserId)
   }
 
   it should "extract a record if the field has _ in it" in {
     val schema = SchemaBuilder
       .builder.record("record").fields.requiredLong("_user_id10").endRecord
     val testSimpleAvroRecord = new GenericRecordBuilder(schema).set("_user_id10", 1L).build
-    val fn = AvroObjMapper.getAvroFun("._user_id10", testSimpleAvroRecord.getSchema)
+    val fn = new FieldAccessor(testSimpleAvroRecord.getSchema)
+      .getFieldAccessor("._user_id10")
 
-    fn.combineFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.get("_user_id10"))
+    fn.accessorFns(testSimpleAvroRecord) should be (testSimpleAvroRecord.get("_user_id10"))
   }
 
   it should "throw an exception if the field is missing" in {
     val testSimpleAvroRecord = testAvroTypes()
     val thrown = intercept[InvalidDynamicFieldException] {
-      AvroObjMapper.getAvroFun(".notRealField", testSimpleAvroRecord.getSchema)
+      new FieldAccessor(testSimpleAvroRecord.getSchema)
+        .getFieldAccessor(".notRealField")
     }
 
     thrown.getMessage should include(".notRealField not found in")

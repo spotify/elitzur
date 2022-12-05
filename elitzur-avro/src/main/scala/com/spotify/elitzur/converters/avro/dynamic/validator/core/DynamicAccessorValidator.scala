@@ -14,17 +14,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.spotify.elitzur.converters.avro.dynamic
+package com.spotify.elitzur.converters.avro.dynamic.validator.core
 
 import com.spotify.elitzur.MetricsReporter
-import com.spotify.elitzur.converters.avro.dynamic.dsl.FieldAccessor
+import com.spotify.elitzur.converters.avro.dynamic.dsl.core.FieldAccessor
+import com.spotify.elitzur.converters.avro.dynamic.schema.SchemaType
 import com.spotify.elitzur.validators.{DynamicRecordValidator, Unvalidated, Validator}
-import org.apache.avro.generic.GenericRecord
 import org.slf4j.LoggerFactory
 
-//scalastyle:off line.size.limit
-class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit metricsReporter: MetricsReporter) extends Serializable {
-//scalastyle:on line.size.limit
+import scala.reflect.runtime.universe.TypeTag
+
+class DynamicAccessorValidator[R: SchemaType: TypeTag, T: RecordType: TypeTag](
+  fieldParsers: Array[DynamicFieldParser[R, T]]
+)(implicit metricsReporter: MetricsReporter) extends Serializable {
   final val className: String = this.getClass.getName
 
   val validator: DynamicRecordValidator = DynamicRecordValidator(
@@ -32,33 +34,38 @@ class DynamicAccessorValidator(fieldParsers: Array[DynamicFieldParser])(implicit
     fieldParsers.map(_.fieldLabel)
   )
 
-  def validateRecord(avroRecord: GenericRecord): Unit = {
-    val parseAllResult: Seq[Any] = fieldParsers.map(_.fieldParser(avroRecord))
+  def validateRecord(record: T): Unit = {
+    val parseAllResult: Seq[Any] = fieldParsers.map(_.fieldParser(record))
     validator.validateRecord(Unvalidated(parseAllResult), outermostClassName = Some(className))
   }
 }
 
-class DynamicFieldParser(
+class DynamicFieldParser[R: SchemaType: TypeTag, T: RecordType: TypeTag](
   accessorInput: String,
   accessorCompanion: DynamicAccessorCompanion[_, _],
-  accessorOps: FieldAccessor
+  accessorOps: FieldAccessor[R]
 )(implicit metricsReporter: MetricsReporter) extends Serializable {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  private val validatorOp = accessorOps.toValidatorOp
-  private val fieldFn: Any => Any = accessorCompanion.getPreprocessorForValidator(validatorOp)
+  // TODO: better string splitting
+  private val fieldAccessorOp = accessorOps.getFieldAccessor(
+    accessorInput.split(":").headOption.get)
+
+  private val validatorOp = fieldAccessorOp.validationOp
+  private val prepForFieldValidatorFn: Any => Any =
+    accessorCompanion.typedFieldValueFn[R](validatorOp)
 
   private[dynamic] val fieldValidator: Validator[Any] = accessorCompanion.getValidator(validatorOp)
   private[dynamic] val fieldLabel: String = accessorInput
-  private[dynamic] def fieldParser(avroRecord: GenericRecord): Any = {
-    val fieldValue = accessorOps.combineFns(avroRecord)
-    fieldFn(fieldValue)
+  private[dynamic] def fieldParser(record: T): Any = {
+    val fieldValue = fieldAccessorOp.accessorFns(record)
+    prepForFieldValidatorFn(fieldValue)
   }
 
   logger.info(
     s"""
        |The field validator input of '$accessorInput' resulted in:
-       |\tAccessors: ${accessorOps.accessors.toString}
+       |\tAccessors: ${fieldAccessorOp.accessors.toString}
        |\tValidators: ${validatorOp.map(_.getClass.getSimpleName).toString}
        |""".stripMargin
   )
