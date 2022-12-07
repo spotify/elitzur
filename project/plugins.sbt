@@ -22,7 +22,7 @@ addSbtPlugin("org.wartremover" % "sbt-wartremover" % "2.4.16")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.2")
 addSbtPlugin("com.github.sbt" % "sbt-release" % "1.1.0")
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.10")
-addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.1.2")
+addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
 
 libraryDependencies ++= Seq(
   "com.spotify.checkstyle" % "spotify-checkstyle-config" % "1.0.10",
