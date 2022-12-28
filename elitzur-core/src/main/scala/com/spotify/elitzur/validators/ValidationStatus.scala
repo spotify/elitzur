@@ -149,7 +149,10 @@ final case class IgnoreValidation[+A](a: A) extends PostValidation[A] {
   override def forceGet: A = a
 }
 
-final case class Invalid[+A](x: A) extends PostValidation[A] {
+final case class Invalid[+A](
+  x: A,
+  fields: Option[Set[String]] = None
+) extends PostValidation[A] {
   override def isValid: Boolean = false
   override def get: A = throw new Exception("Can't get Invalid data, use getInvalid")
   def getOpt: Option[A] = Try(recover(identity)).toOption

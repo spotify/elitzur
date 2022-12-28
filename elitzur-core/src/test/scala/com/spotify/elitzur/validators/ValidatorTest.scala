@@ -131,6 +131,10 @@ class ValidatorTest extends AnyFlatSpec with Matchers {
         )
       )
     )
+    // PostValidationWrapper cannot be cast to class
+    // com.spotify.elitzur.validators.Invalid in scala 2.12
+    // result.asInstanceOf[Invalid[Outer]].fields shouldEqual Some(Set("country", "repeatedAge"))
+
     result.isValid shouldBe false
     val testMetrics = metricsReporter.asInstanceOf[TestMetricsReporter]
     testMetrics.getInvalid(

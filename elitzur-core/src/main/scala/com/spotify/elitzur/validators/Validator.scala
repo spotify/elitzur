@@ -335,6 +335,7 @@ object Validator extends Serializable {
     var i = 0
     var atLeastOneValid = false
     var atLeastOneInvalid = false
+    var invalidFields = mutable.Set.empty[String]
     while (i < validatorAccessors.length) {
       val accessor = validatorAccessors(i)
       val v =
@@ -380,6 +381,9 @@ object Validator extends Serializable {
           if (o.isValid) {
             atLeastOneValid = true
           } else if (o.isInvalid) {
+            invalidFields.add(name)
+            // Add nested fields  too
+            o.asInstanceOf[Invalid[_]].fields.foreach(invalidFields ++= _)
             atLeastOneInvalid = true
           }
 
@@ -392,7 +396,7 @@ object Validator extends Serializable {
     }
     val record = constructor(ArraySeq.unsafeWrapArray(cs))
     if (atLeastOneInvalid) {
-      Invalid(record)
+      Invalid(record, Some(invalidFields.toSet))
     } else if (atLeastOneValid) {
       Valid(record)
     } else {
