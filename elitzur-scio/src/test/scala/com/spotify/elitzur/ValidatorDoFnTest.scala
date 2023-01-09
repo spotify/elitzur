@@ -18,7 +18,8 @@ package com.spotify.elitzur
 
 import java.util.Locale
 import com.spotify.elitzur.scio._
-import com.spotify.elitzur.validators.Invalid
+import com.spotify.elitzur.validators.{Invalid, ValidationRecordConfig}
+import com.spotify.elitzur.validators.featureflags.FeatureFlag
 import com.spotify.scio.{ContextAndArgs, ScioMetrics}
 import com.spotify.scio.testing.PipelineSpec
 import org.scalacheck.{Arbitrary, Gen}
@@ -41,6 +42,7 @@ object TestClasses {
 
 object PipelineInput {
   import TestClasses._
+
 
   val validListInput =
     List(ListTest(List(CountryCodeTesting("US"), CountryCodeTesting("MX")), List("A", "B")))
@@ -83,13 +85,12 @@ object DummyPipeline {
 
 class ValidatorDoFnTest extends PipelineSpec {
 
-
   "Validator SCollection helper" should "validate valid records" in {
     val validRecord = TestClasses.Test(TestClasses.Inner(NonNegativeLongTesting(0)),
       CountryCodeTesting("US"))
 
     runWithData(Seq(validRecord))(sc => {
-      sc.validate()
+      sc.validate(ValidationRecordConfig(FeatureFlag.ValidationErrorContext -> ))
         .count
     }) shouldBe Seq(1)
   }

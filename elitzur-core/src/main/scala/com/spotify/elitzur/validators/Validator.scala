@@ -17,18 +17,15 @@
 package com.spotify.elitzur.validators
 
 import com.spotify.elitzur.validators.Validator.validateField
+import com.spotify.elitzur.validators.featureflags.FeatureFlag
 
 import java.lang.{StringBuilder => JStringBuilder}
-import com.spotify.elitzur.{
-  DataInvalidException,
-  IllegalValidationException,
-  MetricsReporter
-}
+import com.spotify.elitzur.{DataInvalidException, IllegalValidationException, MetricsReporter}
 import magnolia1._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
-import scala.reflect.{ClassTag, _}
+import scala.reflect._
 import scala.util.Try
 import scala.collection.compat._
 import scala.collection.compat.immutable.ArraySeq
@@ -335,7 +332,13 @@ object Validator extends Serializable {
     var i = 0
     var atLeastOneValid = false
     var atLeastOneInvalid = false
-    var invalidFields = mutable.Set.empty[String]
+    var invalidFields: Option[mutable.Set[String]] = if (
+      FeatureFlag.isEnabled(FeatureFlag.ValidationErrorContext, config)
+    ) {
+      Some(mutable.Set.empty[String])
+    } else {
+      None
+    }
     while (i < validatorAccessors.length) {
       val accessor = validatorAccessors(i)
       val v =
@@ -381,9 +384,16 @@ object Validator extends Serializable {
           if (o.isValid) {
             atLeastOneValid = true
           } else if (o.isInvalid) {
-            invalidFields.add(name)
-            // Add nested fields  too
-            o.asInstanceOf[Invalid[_]].fields.foreach(invalidFields ++= _)
+            invalidFields.foreach { v =>
+              v.add(name)
+              // Add nested fields  too
+              o match {
+                case Invalid(_, fields) => fields.foreach(v ++= _)
+                case PostValidationWrapper(Invalid(_, fields)) =>
+                  fields.foreach(v ++= _)
+                case _ => ()
+              }
+            }
             atLeastOneInvalid = true
           }
 
@@ -396,7 +406,7 @@ object Validator extends Serializable {
     }
     val record = constructor(ArraySeq.unsafeWrapArray(cs))
     if (atLeastOneInvalid) {
-      Invalid(record, Some(invalidFields.toSet))
+      Invalid(record, invalidFields.map(_.toSet))
     } else if (atLeastOneValid) {
       Valid(record)
     } else {

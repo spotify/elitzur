@@ -1,6 +1,7 @@
 package com.spotify.elitzur.validators
 
 import com.spotify.elitzur.validators.DynamicRecordValidatorTest.TestMetricsReporter
+import com.spotify.elitzur.validators.featureflags.FeatureFlag
 import com.spotify.elitzur.{AgeTesting, CountryCodeTesting, MetricsReporter}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -23,6 +24,7 @@ case class Inner(
 
 //scalastyle:off magic.number
 class ValidatorTest extends AnyFlatSpec with Matchers {
+  FeatureFlag.enableFlag(FeatureFlag.ValidationErrorContext)
 
   val inner = Inner(
     countryStatus = Unvalidated(CountryCodeTesting("US")),
@@ -133,7 +135,7 @@ class ValidatorTest extends AnyFlatSpec with Matchers {
     )
     // PostValidationWrapper cannot be cast to class
     // com.spotify.elitzur.validators.Invalid in scala 2.12
-    // result.asInstanceOf[Invalid[Outer]].fields shouldEqual Some(Set("country", "repeatedAge"))
+     result.asInstanceOf[Invalid[Outer]].fields shouldEqual Some(Set("country", "repeatedAge"))
 
     result.isValid shouldBe false
     val testMetrics = metricsReporter.asInstanceOf[TestMetricsReporter]

@@ -40,3 +40,5 @@ sealed trait ValidationFieldConfig extends ValidationConfig
 case object ThrowException extends ValidationFieldConfig
 case object NoCounter extends ValidationFieldConfig
 case object DefaultFieldConfig extends ValidationFieldConfig
+
+case object FeatureEnabled extends ValidationFieldConfig
