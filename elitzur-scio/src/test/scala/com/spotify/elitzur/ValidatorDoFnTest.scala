@@ -18,7 +18,7 @@ package com.spotify.elitzur
 
 import java.util.Locale
 import com.spotify.elitzur.scio._
-import com.spotify.elitzur.validators.{Invalid, ValidationRecordConfig}
+import com.spotify.elitzur.validators.{Invalid, ValidationRecordConfig, FeatureEnabled}
 import com.spotify.elitzur.validators.featureflags.FeatureFlag
 import com.spotify.scio.{ContextAndArgs, ScioMetrics}
 import com.spotify.scio.testing.PipelineSpec
@@ -90,7 +90,7 @@ class ValidatorDoFnTest extends PipelineSpec {
       CountryCodeTesting("US"))
 
     runWithData(Seq(validRecord))(sc => {
-      sc.validate(ValidationRecordConfig(FeatureFlag.ValidationErrorContext -> ))
+      sc.validate()
         .count
     }) shouldBe Seq(1)
   }
@@ -129,7 +129,7 @@ class ValidatorDoFnTest extends PipelineSpec {
     val invalidRecords = Gen.listOfN(numberToValidate, invalidRecordGen).sample.get
 
     val result = runWithData(invalidRecords)(sc =>
-      sc.validateWithResult()
+      sc.validateWithResult(ValidationRecordConfig(FeatureFlag.ValidationErrorContext -> FeatureEnabled))
         .filter(_.isInvalid)
         .flatMap(_.asInstanceOf[Invalid[TestClasses.Test]].fields.getOrElse(Set.empty))
         .distinct

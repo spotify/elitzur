@@ -13,7 +13,4 @@ object FeatureFlag {
   def isEnabled(feature: String, conf: ValidationRecordConfig): Boolean =
     conf.fieldConfig(feature) == FeatureEnabled
 
-  def disable(feature: String, conf: ValidationRecordConfig): Unit =
-    conf.fieldConfig(feature) = DefaultFieldConfig
-
 }

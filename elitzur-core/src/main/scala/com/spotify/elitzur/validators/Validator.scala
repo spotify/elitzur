@@ -332,7 +332,7 @@ object Validator extends Serializable {
     var i = 0
     var atLeastOneValid = false
     var atLeastOneInvalid = false
-    var invalidFields: Option[mutable.Set[String]] = if (
+    val invalidFields: Option[mutable.Set[String]] = if (
       FeatureFlag.isEnabled(FeatureFlag.ValidationErrorContext, config)
     ) {
       Some(mutable.Set.empty[String])

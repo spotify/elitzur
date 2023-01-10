@@ -24,8 +24,6 @@ case class Inner(
 
 //scalastyle:off magic.number
 class ValidatorTest extends AnyFlatSpec with Matchers {
-  FeatureFlag.enableFlag(FeatureFlag.ValidationErrorContext)
-
   val inner = Inner(
     countryStatus = Unvalidated(CountryCodeTesting("US")),
     country = CountryCodeTesting("CA"),
@@ -131,7 +129,8 @@ class ValidatorTest extends AnyFlatSpec with Matchers {
           repeatedAge = List(AgeTesting(50L), AgeTesting(1000L)),
           repeatedInner = List(inner, inner, inner)
         )
-      )
+      ),
+      config = ValidationRecordConfig(FeatureFlag.ValidationErrorContext -> FeatureEnabled)
     )
     // PostValidationWrapper cannot be cast to class
     // com.spotify.elitzur.validators.Invalid in scala 2.12
