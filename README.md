@@ -249,7 +249,7 @@ If you're writing a unit test and don't have control of the input schema, you ma
 
 The test workflow using `toAvroDefault` works like this:
 
-1. Generate case classes containing the fields you care about (this can be done in several ways)
+1. Generate case classes containing the fields you care about (this can be done in several ways
 2. Generate a SpecificRecord of your input type with values in all required fields (this can be done with `specificRecordOf` in [Ratatool-Scalacheck](https://github.com/spotify/ratatool/tree/master/ratatool-scalacheck#usage))
 3. Use both the case classes you've generated and the SpecificRecord as arguments to `toAvroDefault`
 4. The output of `toAvroDefault` for a case class will be a SpecificRecord where all fields in your case class are copied into the record, and all fields not specified in the case class will have the values given in your "default" record. Repeated nested records will take their default values from the first nested record in the repeated list.
