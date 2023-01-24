@@ -19,18 +19,18 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.12.0"
-val beamVersion = "2.41.0" // must stay in sync with scio
+val scioVersion = "0.12.1"
+val beamVersion = "2.43.0" // must stay in sync with Scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
-val jodaTimeVersion = "2.10.13"
+val jodaTimeVersion = "2.12.2"
 val magnoliaVersion = "1.1.2"
 val ratatoolVersion = "0.4.0"
-val scalaCheckVersion = "1.14.3"
+val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.0"
-val scalaCollectionsCompatVersion = "2.6.0"
+val scalaCollectionsCompatVersion = "2.9.0"
 
 
 val disableWarts = Set(
