@@ -56,7 +56,7 @@ class AccessorOpToValidatorOpTest extends AnyFlatSpec with Matchers {
       List[BaseAccessor](ArrayNoopAccessor(DEFAULT_VALUE,
         List[BaseAccessor](IndexAccessor(DEFAULT_VALUE), NullableAccessor(DEFAULT_VALUE,
           List[BaseAccessor](IndexAccessor(DEFAULT_VALUE))
-        )),
+        ))
       ))
     FieldAccessor(accessors).toValidatorOp should be (List(ArrayValidatorOp, OptionValidatorOp))
   }
