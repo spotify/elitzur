@@ -24,7 +24,7 @@ import com.spotify.elitzur.{
   IllegalValidationException,
   MetricsReporter
 }
-import magnolia._
+import magnolia1._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
@@ -268,7 +268,7 @@ object Validator extends Serializable {
   type Typeclass[T] = Validator[T]
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
-  def combine[T](
+  def join[T](
       caseClass: CaseClass[Validator, T]
   )(implicit reporter: MetricsReporter, tag: ClassTag[T]): Validator[T] = {
     val params = caseClass.parameters
@@ -284,7 +284,7 @@ object Validator extends Serializable {
     if (shouldValidate) DerivedValidator(caseClass) else new IgnoreValidator[T]
   }
 
-  def dispatch[T](sealedTrait: SealedTrait[Validator, T]): Validator[T] =
+  def split[T](sealedTrait: SealedTrait[Validator, T]): Validator[T] =
     new Validator[T] {
       def validateRecord(
           a: PreValidation[T],

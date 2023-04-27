@@ -19,18 +19,18 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.11.4"
-val beamVersion = "2.35.0" // must stay in sync with scio
+val scioVersion = "0.12.8"
+val beamVersion = "2.46.0" // must stay in sync with Scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
-val jodaTimeVersion = "2.10.13"
-val magnoliaVersion = "1.0.0-M4"
-val ratatoolVersion = "0.3.25"
-val scalaCheckVersion = "1.14.3"
+val jodaTimeVersion = "2.12.2"
+val magnoliaVersion = "1.1.3"
+val ratatoolVersion = "0.4.0"
+val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.0"
-val scalaCollectionsCompatVersion = "2.6.0"
+val scalaCollectionsCompatVersion = "2.9.0"
 
 
 val disableWarts = Set(
@@ -89,7 +89,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.17", "2.13.6"),
+  crossScalaVersions := Seq("2.12.17", "2.13.8"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -98,7 +98,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
     "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
     "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion % "test",
     "joda-time" % "joda-time" % jodaTimeVersion,
-    "com.softwaremill.magnolia" %% "magnolia-core" % magnoliaVersion,
+    "com.softwaremill.magnolia1_2" %% "magnolia" % magnoliaVersion,
     "com.beachape" %% "enumeratum" % enumeratumVersion,
     "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatVersion,
   ),
