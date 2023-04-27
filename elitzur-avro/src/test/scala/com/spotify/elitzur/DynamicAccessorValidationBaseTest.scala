@@ -38,14 +38,14 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
 
   val userInput: Array[DynamicFieldParser] = Array(
     new DynamicFieldParser(
-      ".inner.playCount:NonNegativeLong",
+      "inner.playCount:NonNegativeLong",
       new DynamicAccessorCompanion[Long, NonNegativeLong],
-      AvroObjMapper.getAvroFun(".inner.playCount", TestAvroTypes.SCHEMA$)
+      AvroObjMapper.getAvroFun("inner.playCount", TestAvroTypes.SCHEMA$)
     ),
     new DynamicFieldParser(
-      ".inner.countryCode:CountryCode",
+      "inner.countryCode:CountryCode",
       new DynamicAccessorCompanion[String, CountryCode],
-      AvroObjMapper.getAvroFun(".inner.countryCode", TestAvroTypes.SCHEMA$)
+      AvroObjMapper.getAvroFun("inner.countryCode", TestAvroTypes.SCHEMA$)
     )
   )
 
@@ -58,10 +58,10 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.playCount:NonNegativeLong", NonNegativeLongCompanion)
+      "inner.playCount:NonNegativeLong", NonNegativeLongCompanion)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.countryCode:CountryCode", CountryCompanion)
+      "inner.countryCode:CountryCode", CountryCompanion)
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((1, 0, 1, 0))
@@ -72,16 +72,16 @@ class DynamicAccessorValidationBaseTest extends AnyFlatSpec with Matchers with B
 
     val validAvroRecord = helpers.SampleAvroRecords.testAvroTypes(isValid = false)
 
-    val abc = AvroObjMapper.getAvroFun(".inner.playCount", TestAvroTypes.SCHEMA$)
+    val abc = AvroObjMapper.getAvroFun("inner.playCount", TestAvroTypes.SCHEMA$)
 
     // Validate the sample input
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.playCount:NonNegativeLong", NonNegativeLongCompanion)
+      "inner.playCount:NonNegativeLong", NonNegativeLongCompanion)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".inner.countryCode:CountryCode", CountryCompanion)
+      "inner.countryCode:CountryCode", CountryCompanion)
 
     (playCountValidCount, playCountInvalidCount,
       countryCodValidCount, countryCodInvalidCount) should be ((0, 1, 0, 1))

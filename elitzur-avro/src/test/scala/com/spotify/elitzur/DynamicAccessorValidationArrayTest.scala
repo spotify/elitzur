@@ -42,9 +42,9 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
   it should "correctly validate and invalidate elements in a list (Seq)" in {
     val userInput: Array[DynamicFieldParser] = Array(
       new DynamicFieldParser(
-        ".arrayLongs:NonNegativeLong",
+        "arrayLongs:NonNegativeLong",
         new DynamicAccessorCompanion[Long, NonNegativeLong],
-        AvroObjMapper.getAvroFun(".arrayLongs", TestAvroArrayTypes.SCHEMA$)
+        AvroObjMapper.getAvroFun("arrayLongs", TestAvroArrayTypes.SCHEMA$)
       )
     )
 
@@ -54,7 +54,7 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (playCountValidCount, playCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".arrayLongs:NonNegativeLong", NonNegativeLongCompanion)
+      "arrayLongs:NonNegativeLong", NonNegativeLongCompanion)
 
     val (expectedValid, expectedInvalid) = validAvroRecord
       .getArrayLongs
@@ -69,9 +69,9 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
   it should "correctly validate and invalidate nullable elements in a list (Seq.Option)" in {
     val userInput: Array[DynamicFieldParser] = Array(
       new DynamicFieldParser(
-        ".arrayNullableStrings:CountryCode",
+        "arrayNullableStrings:CountryCode",
         new DynamicAccessorCompanion[String, CountryCode],
-        AvroObjMapper.getAvroFun(".arrayNullableStrings", TestAvroArrayTypes.SCHEMA$)
+        AvroObjMapper.getAvroFun("arrayNullableStrings", TestAvroArrayTypes.SCHEMA$)
       )
     )
 
@@ -86,7 +86,7 @@ class DynamicAccessorValidationArrayTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (countryCountValidCount, countryCountInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".arrayNullableStrings:CountryCode", CountryCompanion)
+      "arrayNullableStrings:CountryCode", CountryCompanion)
 
     (countryCountValidCount, countryCountInvalidCount) should be((2, 1))
   }
