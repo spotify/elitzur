@@ -55,6 +55,8 @@ object AvroAccessorUtil {
   private val PRIMITIVES: ju.EnumSet[Schema.Type] =
     ju.EnumSet.complementOf(ju.EnumSet.of(Schema.Type.ARRAY, Schema.Type.MAP, Schema.Type.UNION))
 
+  private val token = '.'
+
   def mapToAccessors(path: String, schema: Schema): AvroAccessorContainer = {
     val fieldTokens = pathToTokens(path)
     val fieldSchema = Try(schema.getField(fieldTokens.field).schema()) match {
@@ -79,18 +81,17 @@ object AvroAccessorUtil {
   }
 
   private def pathToTokens(path: String): AvroFieldTokens = {
-    def strToOpt(str: String) :Option[String] = if (str.nonEmpty) Some(str) else None
-    val token = '.'
-    if (path.headOption.contains(token)) {
-      val (fieldOps, rest) = path.drop(1).span(_ != token)
-      val (field, op) = fieldOps.span(char => char.isLetterOrDigit || char == '_')
-      AvroFieldTokens(field, strToOpt(op), strToOpt(rest))
+    val idx = path.indexOf('.')
+    val (field, rest)  = if (idx > 0) {
+      (path.substring(0, idx), Some(path.substring(idx + 1)))
     } else {
-      throw new InvalidDynamicFieldException(MISSING_TOKEN)
+      (path, None)
     }
+
+    AvroFieldTokens(field, rest)
   }
 }
 
 case class AvroAccessorContainer(ops: BaseAccessor, schema: Schema, rest: Option[String])
 
-case class AvroFieldTokens(field: String, op: Option[String], rest: Option[String])
+case class AvroFieldTokens(field: String, rest: Option[String])
