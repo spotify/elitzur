@@ -35,7 +35,6 @@ class IndexAccessorLogic(schema: Schema, fieldTokens: AvroFieldTokens) extends B
 
 class NullableAccessorLogic(
   schema: Schema, fieldTokens: AvroFieldTokens) extends BaseAccessorLogic {
-  private final val nullableToken = "?"
 
   val nonNullSchema: Schema = getNonNullSchema(schema)
   val headAccessor: AvroAccessorContainer = mapToAccessors(nonNullSchema, fieldTokens)
@@ -68,7 +67,6 @@ class NullableAccessorLogic(
 
 class ArrayAccessorLogic(
   arrayElemSchema: Schema, fieldTokens: AvroFieldTokens) extends BaseAccessorLogic {
-  private final val arrayToken = "[]"
 
   override val accessor: BaseAccessor = getArrayAccessor(arrayElemSchema, fieldTokens)
   override val avroOp: AvroAccessorContainer =
@@ -76,9 +74,6 @@ class ArrayAccessorLogic(
 
   private def getArrayAccessor(innerSchema: Schema, fieldTokens: AvroFieldTokens): BaseAccessor = {
     if (fieldTokens.rest.isDefined) {
-      if (!fieldTokens.op.contains(arrayToken)) {
-        throw new InvalidDynamicFieldException(MISSING_ARRAY_TOKEN)
-      }
       val recursiveResult = AvroObjMapper.getAvroAccessors(fieldTokens.rest.get, innerSchema)
       // innerOps represents the list of accessors to be applied to each element in an array
       val innerOps = recursiveResult.map(_.ops)
@@ -91,16 +86,15 @@ class ArrayAccessorLogic(
       }
     } else {
       val headAccessor: BaseAccessor = mapToAccessors(innerSchema, fieldTokens).ops
-      ArrayNoopAccessor(fieldTokens.field, List(headAccessor), fieldTokens.op.contains(arrayToken))
+      ArrayNoopAccessor(fieldTokens.field, List(headAccessor))
     }
   }
 
   private def getFlattenFlag(ops: List[BaseAccessor]): Boolean = {
     ops.foldLeft(false)((accBoolean, currAccessor) => {
       val hasArrayAccessor = currAccessor match {
-        case a: ArrayNoopAccessor => a.flatten
         case n: NullableAccessor => getFlattenFlag(n.innerOps)
-        case _: ArrayMapAccessor | _: ArrayFlatmapAccessor => true
+        case _: ArrayMapAccessor | _: ArrayFlatmapAccessor | _: ArrayNoopAccessor=> true
         case _ => false
       }
       accBoolean || hasArrayAccessor
