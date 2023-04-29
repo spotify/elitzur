@@ -71,7 +71,7 @@ case class ArrayMapAccessor(field: String, innerOps: List[BaseAccessor])
   }
 }
 
-case class ArrayNoopAccessor(field: String, innerOps: List[BaseAccessor], flatten: Boolean)
+case class ArrayNoopAccessor(field: String, innerOps: List[BaseAccessor])
   extends ArrayBaseAccessor {
   override def fn: Any => Any = (o: Any) => IndexAccessor(field).fn(o)
 }
