@@ -41,9 +41,9 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
 
   val userInput: Array[DynamicFieldParser] = Array(
     new DynamicFieldParser(
-      ".optRecord.optString:CountryCode",
+      "optRecord.optString:CountryCode",
       new DynamicAccessorCompanion[String, CountryCode],
-      AvroObjMapper.getAvroFun(".optRecord.optString", TestAvroUnionTypes.SCHEMA$)
+      AvroObjMapper.getAvroFun("optRecord.optString", TestAvroUnionTypes.SCHEMA$)
     )
   )
 
@@ -60,7 +60,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(validAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString:CountryCode", CountryCompanion)
+      "optRecord.optString:CountryCode", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }
@@ -79,7 +79,7 @@ class DynamicAccessorValidationUnionTest extends AnyFlatSpec with Matchers with 
     testSetUp.dynamicRecordValidator.validateRecord(inValidAvroRecord)
 
     val (countryCodValidCount, countryCodInvalidCount) = testSetUp.getValidAndInvalidCounts(
-      ".optRecord.optString:CountryCode", CountryCompanion)
+      "optRecord.optString:CountryCode", CountryCompanion)
 
     (countryCodValidCount, countryCodInvalidCount) should be ((1, 0))
   }
