@@ -18,13 +18,13 @@ addSbtPlugin("com.cavorite" % "sbt-avro-1-8" % "1.1.9")
 addSbtPlugin("com.etsy" % "sbt-checkstyle-plugin" % "3.1.1")
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
-addSbtPlugin("org.wartremover" % "sbt-wartremover" % "2.4.21")
+addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.1.3")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.2")
 addSbtPlugin("com.github.sbt" % "sbt-release" % "1.1.0")
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.18")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.21")
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.1.2")
 
 libraryDependencies ++= Seq(
   "com.spotify.checkstyle" % "spotify-checkstyle-config" % "1.0.10",
-  "com.puppycrawl.tools" % "checkstyle" % "8.45.1"
+  "com.puppycrawl.tools" % "checkstyle" % "10.11.0"
 )
