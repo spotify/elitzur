@@ -19,8 +19,8 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.13.0"
-val beamVersion = "2.46.0" // must stay in sync with Scio
+val scioVersion = "0.13.1"
+val beamVersion = "2.49.0" // must stay in sync with Scio
 val avroVersion = "1.8.2"
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
@@ -29,7 +29,7 @@ val jodaTimeVersion = "2.12.5"
 val magnoliaVersion = "1.1.3"
 val ratatoolVersion = "0.4.1"
 val scalaCheckVersion = "1.17.0"
-val enumeratumVersion = "1.7.2"
+val enumeratumVersion = "1.7.3"
 val scalaCollectionsCompatVersion = "2.11.0"
 
 
@@ -57,7 +57,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   releaseSettings ++ Seq(
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
-  scalaVersion          := "2.12.18",
+  scalaVersion          := "2.13.11",
   scalacOptions         ++= Seq(
     "-target:jvm-1.8",
     "-deprecation",
