@@ -19,9 +19,9 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.13.1"
-val beamVersion = "2.49.0" // must stay in sync with Scio
-val avroVersion = "1.8.2"
+val scioVersion = "0.13.3"
+val beamVersion = "2.50.0" // must stay in sync with scio
+val avroVersion = "1.8.2" // must stay in sync with scio
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
@@ -31,7 +31,6 @@ val ratatoolVersion = "0.4.1"
 val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.3"
 val scalaCollectionsCompatVersion = "2.11.0"
-
 
 val disableWarts = Set(
   Wart.NonUnitStatements,
