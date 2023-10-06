@@ -20,14 +20,14 @@ import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
 val scioVersion = "0.13.3"
-val beamVersion = "2.50.0" // must stay in sync with scio
-val avroVersion = "1.8.2" // must stay in sync with scio
+val beamVersion = "2.50.0" // keep in sync with scio
+val avroVersion = "1.8.2" // keep in sync with scio
 val scalacheckShapelessVersion = "1.2.3"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
-val jodaTimeVersion = "2.12.5"
-val magnoliaVersion = "1.1.6"
-val ratatoolVersion = "0.4.2"
+val jodaTimeVersion = "2.10.10" // keep in sync with scio
+val magnoliaVersion = "1.1.3" // keep in sync with scio
+val ratatoolVersion = "0.4.2" // keep scio versions in sync
 val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.3"
 val scalaCollectionsCompatVersion = "2.11.0"
