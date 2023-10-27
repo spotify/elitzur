@@ -19,7 +19,7 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.13.3"
+val scioVersion = "0.13.5"
 val beamVersion = "2.50.0" // keep in sync with scio
 val avroVersion = "1.8.2" // keep in sync with scio
 val scalacheckShapelessVersion = "1.2.3"
