@@ -19,15 +19,15 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.13.5"
-val beamVersion = "2.50.0" // keep in sync with scio
+val scioVersion = "0.13.6"
+val beamVersion = "2.52.0" // keep in sync with scio
 val avroVersion = "1.8.2" // keep in sync with scio
-val scalacheckShapelessVersion = "1.2.3"
+val scalacheckShapelessVersion = "1.3.1"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.10" // keep in sync with scio
 val magnoliaVersion = "1.1.3" // keep in sync with scio
-val ratatoolVersion = "0.4.2" // keep scio versions in sync
+val ratatoolVersion = "0.4.3" // keep scio versions in sync
 val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.3"
 val scalaCollectionsCompatVersion = "2.11.0"
@@ -192,7 +192,7 @@ lazy val elitzurScio: Project = Project(
   commonSettings ++ releaseSettings ++ scioSettings,
   name := "elitzur-scio",
   libraryDependencies ++= Seq(
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % scalacheckShapelessVersion % Test,
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.16" % scalacheckShapelessVersion % Test,
   ),
   // avro config
   version in AvroConfig := avroVersion,
