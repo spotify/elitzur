@@ -19,19 +19,18 @@ import sbt.librarymanagement.CrossVersion
 import com.typesafe.sbt.SbtGit.GitKeys._
 
 // Variables:
-val scioVersion = "0.13.1"
-val beamVersion = "2.49.0" // must stay in sync with Scio
-val avroVersion = "1.8.2"
-val scalacheckShapelessVersion = "1.2.3"
+val scioVersion = "0.13.6"
+val beamVersion = "2.52.0" // keep in sync with scio
+val avroVersion = "1.8.2" // keep in sync with scio
+val scalacheckShapelessVersion = "1.3.1"
 val scalatestVersion = "3.1.4"
 val scalatestMockitoVersion = "3.1.0.0"
-val jodaTimeVersion = "2.12.5"
-val magnoliaVersion = "1.1.6"
-val ratatoolVersion = "0.4.1"
+val jodaTimeVersion = "2.10.10" // keep in sync with scio
+val magnoliaVersion = "1.1.3" // keep in sync with scio
+val ratatoolVersion = "0.4.3" // keep scio versions in sync
 val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.3"
 val scalaCollectionsCompatVersion = "2.11.0"
-
 
 val disableWarts = Set(
   Wart.NonUnitStatements,
@@ -57,7 +56,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   releaseSettings ++ Seq(
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
-  scalaVersion          := "2.13.11",
+  scalaVersion          := "2.13.12",
   scalacOptions         ++= Seq(
     "-target:jvm-1.8",
     "-deprecation",
@@ -89,7 +88,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.18", "2.13.11"),
+  crossScalaVersions := Seq("2.12.18", "2.13.12"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -193,7 +192,7 @@ lazy val elitzurScio: Project = Project(
   commonSettings ++ releaseSettings ++ scioSettings,
   name := "elitzur-scio",
   libraryDependencies ++= Seq(
-    "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % scalacheckShapelessVersion % Test,
+    "com.github.alexarchambault" %% "scalacheck-shapeless_1.16" % scalacheckShapelessVersion % Test,
   ),
   // avro config
   version in AvroConfig := avroVersion,
