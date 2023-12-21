@@ -17,7 +17,7 @@
 addSbtPlugin("com.cavorite" % "sbt-avro-1-8" % "1.1.9")
 addSbtPlugin("com.etsy" % "sbt-checkstyle-plugin" % "3.1.1")
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
-addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.5")
+addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.6")
 addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.1.5")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.2")
 addSbtPlugin("com.github.sbt" % "sbt-release" % "1.1.0")
