@@ -16,7 +16,7 @@
  */
 import sbt.{Project, addCompilerPlugin, _}
 import sbt.librarymanagement.CrossVersion
-import com.typesafe.sbt.SbtGit.GitKeys._
+import com.github.sbt.git.SbtGit.GitKeys._
 
 // Variables:
 val scioVersion = "0.13.6"
