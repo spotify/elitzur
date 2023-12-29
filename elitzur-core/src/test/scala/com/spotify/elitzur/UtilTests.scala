@@ -17,9 +17,10 @@
 package com.spotify.elitzur.example
 
 import com.spotify.elitzur.Utils._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class UtilTests extends FlatSpec with Matchers {
+class UtilTests extends AnyFlatSpec with Matchers {
   "camelToSnake" should "convert camelCase to snake_case" in {
     val inputs = Seq("myField", "inputFieldName", "nocamels")
 
