@@ -18,16 +18,17 @@ import sbt.{Project, addCompilerPlugin, _}
 import sbt.librarymanagement.CrossVersion
 import com.github.sbt.git.SbtGit.GitKeys._
 
-// Variables:
-val scioVersion = "0.13.6"
-val beamVersion = "2.52.0" // keep in sync with scio
+// Keep in sync with Scio: https://github.com/spotify/scio/blob/v0.14.0/build.sbt
+val scioVersion = "0.14-8962386-SNAPSHOT"
+
+val beamVersion = "2.53.0" // keep in sync with scio
 val avroVersion = "1.8.2" // keep in sync with scio
 val scalacheckShapelessVersion = "1.3.1"
 val scalatestVersion = "3.2.17"
 val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.10" // keep in sync with scio
-val magnoliaVersion = "1.1.3" // keep in sync with scio
-val ratatoolVersion = "0.4.3" // keep scio versions in sync
+val magnoliaVersion = "1.1.8" // keep in sync with scio
+val ratatoolVersion = "0.4.4-SNAPSHOT" // keep scio versions in sync
 val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.3"
 val scalaCollectionsCompatVersion = "2.11.0"
@@ -58,7 +59,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   name                  := "spotify-elitzur",
   scalaVersion          := "2.13.12",
   scalacOptions         ++= Seq(
-    "-target:jvm-1.8",
+    "-target:8",
     "-deprecation",
     "-feature",
     "-unchecked",
@@ -72,16 +73,9 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
       Seq()
     }
   },
-  javacOptions ++= Seq("-source", "1.8",
-    "-target", "1.8"),
-
+  javacOptions ++= Seq("--release", "8"),
   // Repositories and dependencies
-  resolvers ++= Seq(
-    Resolver.sonatypeRepo("public"),
-    "Local Maven Repository" at "file://" + Path.userHome.absolutePath + "/.m2/repository",
-    "Local Ivy Repository" at "file://" + Path.userHome.absolutePath + "/.ivy2/local",
-    "Confluent's Maven Public Repository" at "https://packages.confluent.io/maven/"
-  ),
+  resolvers ++= Resolver.sonatypeOssRepos("public"),
 
   // protobuf-lite is an older subset of protobuf-java and causes issues
   excludeDependencies += "com.google.protobuf" % "protobuf-lite",
@@ -92,10 +86,10 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-    "org.scalatest" %% "scalatest" % scalatestVersion % "test",
-    "org.scalatestplus" %% "mockito-1-10" % scalatestMockitoVersion % "test",
-    "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
-    "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion % "test",
+    "org.scalatest" %% "scalatest" % scalatestVersion % Test,
+    "org.scalatestplus" %% "mockito-1-10" % scalatestMockitoVersion % Test,
+    "org.scalacheck" %% "scalacheck" % scalaCheckVersion % Test,
+    "com.spotify" %% "ratatool-scalacheck" % ratatoolVersion % Test,
     "joda-time" % "joda-time" % jodaTimeVersion,
     "com.softwaremill.magnolia1_2" %% "magnolia" % magnoliaVersion,
     "com.beachape" %% "enumeratum" % enumeratumVersion,
