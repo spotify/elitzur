@@ -29,6 +29,7 @@ import org.apache.avro.util.Utf8
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException
 import org.scalacheck.{Arbitrary, Gen}
 import com.spotify.ratatool.scalacheck._
+import com.spotify.scio.avro._
 
 sealed trait TestEnum extends EnumEntry with Product with Serializable
 
