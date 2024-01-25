@@ -19,7 +19,7 @@ import sbt.librarymanagement.CrossVersion
 import com.github.sbt.git.SbtGit.GitKeys._
 
 // Keep in sync with Scio: https://github.com/spotify/scio/blob/v0.14.0/build.sbt
-val scioVersion = "0.14-8962386-SNAPSHOT"
+val scioVersion = "0.14-80c6d3c-SNAPSHOT"
 
 val beamVersion = "2.53.0" // keep in sync with scio
 val avroVersion = "1.8.2" // keep in sync with scio
@@ -28,7 +28,7 @@ val scalatestVersion = "3.2.17"
 val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.10" // keep in sync with scio
 val magnoliaVersion = "1.1.8" // keep in sync with scio
-val ratatoolVersion = "0.4.4-SNAPSHOT" // keep scio versions in sync
+val ratatoolVersion = "0.4.3" // @Todo update when Ratatool+Scio 0.14.0 released // keep scio versions in sync
 val scalaCheckVersion = "1.17.0"
 val enumeratumVersion = "1.7.3"
 val scalaCollectionsCompatVersion = "2.11.0"
@@ -76,9 +76,11 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   javacOptions ++= Seq("--release", "8"),
   // Repositories and dependencies
   resolvers ++= Resolver.sonatypeOssRepos("public"),
+  resolvers ++= Resolver.sonatypeOssRepos("snapshots"), // @Todo remove when 0.14.0 released
 
   // protobuf-lite is an older subset of protobuf-java and causes issues
   excludeDependencies += "com.google.protobuf" % "protobuf-lite",
+  excludeDependencies += "org.apache.beam" % "beam-sdks-java-io-kafka",
 
   crossPaths := true,
   autoScalaLibrary := false,

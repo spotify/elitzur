@@ -18,6 +18,7 @@ package com.spotify.elitzur.examples
 
 
 import com.spotify.scio._
+import com.spotify.scio.avro._
 import com.spotify.elitzur.schemas.{InnerNestedType, TestAvroTypes}
 import com.spotify.elitzur.scio._
 import com.spotify.elitzur.validators._
