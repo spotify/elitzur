@@ -21,6 +21,8 @@ import com.spotify.elitzur.converters.avro._
 import ValidationTypeImplicits._
 import com.spotify.elitzur.scio._
 import com.spotify.elitzur.validators._
+import com.spotify.scio.avro._
+import com.spotify.scio.coders.kryo._
 import com.spotify.scio.testing.PipelineSpec
 import com.spotify.skeleton.schema._
 import com.spotify.scio.values.SCollection
@@ -29,6 +31,7 @@ import org.apache.avro.util.Utf8
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException
 import org.scalacheck.{Arbitrary, Gen}
 import com.spotify.ratatool.scalacheck._
+import com.spotify.scio.avro._
 
 sealed trait TestEnum extends EnumEntry with Product with Serializable
 

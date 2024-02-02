@@ -8,12 +8,12 @@ version: &version 2.1
 executors:
   scala_212:
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: circleci/openjdk:11-jdk
     environment:
       SCALA_VERSION: 2.12.14
   scala_213:
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: circleci/openjdk:11-jdk
     environment:
       SCALA_VERSION: 2.13.6
 

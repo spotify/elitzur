@@ -21,6 +21,7 @@ import ValidatorDoFns.{ValidatorDoFn, ValidatorDoFnWithResult}
 import com.spotify.elitzur.converters.avro.AvroConverter
 import com.spotify.elitzur.validators.{PostValidation, ValidationRecordConfig, Validator}
 import com.spotify.scio.coders.Coder
+import com.spotify.scio.coders.kryo._
 import com.spotify.scio.values.SCollection
 import org.apache.avro.generic.GenericRecord
 import org.apache.beam.sdk.transforms.ParDo
