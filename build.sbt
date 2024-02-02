@@ -18,8 +18,7 @@ import sbt.{Project, addCompilerPlugin, _}
 import sbt.librarymanagement.CrossVersion
 import com.github.sbt.git.SbtGit.GitKeys._
 
-// Keep in sync with Scio: https://github.com/spotify/scio/blob/v0.14.0/build.sbt
-val scioVersion = "0.14-80c6d3c-SNAPSHOT"
+val scioVersion = "0.14.0"
 
 val beamVersion = "2.53.0" // keep in sync with scio
 val avroVersion = "1.8.2" // keep in sync with scio
@@ -76,7 +75,6 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   javacOptions ++= Seq("--release", "8"),
   // Repositories and dependencies
   resolvers ++= Resolver.sonatypeOssRepos("public"),
-  resolvers ++= Resolver.sonatypeOssRepos("snapshots"), // @Todo remove when 0.14.0 released
 
   // protobuf-lite is an older subset of protobuf-java and causes issues
   excludeDependencies += "com.google.protobuf" % "protobuf-lite",
