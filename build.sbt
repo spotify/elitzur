@@ -18,7 +18,7 @@ import sbt.{Project, addCompilerPlugin, _}
 import sbt.librarymanagement.CrossVersion
 import com.github.sbt.git.SbtGit.GitKeys._
 
-val scioVersion = "0.14.0"
+val scioVersion = "0.14.1"
 
 val beamVersion = "2.53.0" // keep in sync with scio
 val avroVersion = "1.8.2" // keep in sync with scio
@@ -56,7 +56,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
   releaseSettings ++ Seq(
   organization          := "com.spotify",
   name                  := "spotify-elitzur",
-  scalaVersion          := "2.13.12",
+  scalaVersion          := "2.13.13",
   scalacOptions         ++= Seq(
     "-target:8",
     "-deprecation",
@@ -82,7 +82,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.12.19", "2.13.12"),
+  crossScalaVersions := Seq("2.12.19", "2.13.13"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
