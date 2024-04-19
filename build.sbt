@@ -30,7 +30,7 @@ val magnoliaVersion = "1.1.8" // keep in sync with scio
 val ratatoolVersion = "0.4.5"
 val scalaCheckVersion = "1.17.1"
 val enumeratumVersion = "1.7.3"
-val scalaCollectionsCompatVersion = "2.11.0"
+val scalaCollectionsCompatVersion = "2.12.0"
 
 val disableWarts = Set(
   Wart.NonUnitStatements,
