@@ -18,7 +18,7 @@ import sbt.{Project, addCompilerPlugin, _}
 import sbt.librarymanagement.CrossVersion
 import com.github.sbt.git.SbtGit.GitKeys._
 
-val scioVersion = "0.14.3"
+val scioVersion = "0.14.5"
 
 val beamVersion = "2.54.0" // keep in sync with scio
 val avroVersion = "1.8.2" // keep in sync with scio
