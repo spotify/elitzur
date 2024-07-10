@@ -29,7 +29,7 @@ val jodaTimeVersion = "2.10.10" // keep in sync with scio
 val magnoliaVersion = "1.1.8" // keep in sync with scio
 val ratatoolVersion = "0.4.5"
 val scalaCheckVersion = "1.17.1"
-val enumeratumVersion = "1.7.3"
+val enumeratumVersion = "1.7.4"
 val scalaCollectionsCompatVersion = "2.12.0"
 
 val disableWarts = Set(
