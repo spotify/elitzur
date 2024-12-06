@@ -28,8 +28,8 @@ val scalatestMockitoVersion = "3.1.0.0"
 val jodaTimeVersion = "2.10.10" // keep in sync with scio
 val magnoliaVersion = "1.1.8" // keep in sync with scio
 val ratatoolVersion = "0.4.5"
-val scalaCheckVersion = "1.18.0"
-val enumeratumVersion = "1.7.3"
+val scalaCheckVersion = "1.18.1"
+val enumeratumVersion = "1.7.5"
 val scalaCollectionsCompatVersion = "2.12.0"
 
 val disableWarts = Set(
@@ -82,7 +82,7 @@ lazy val commonSettings = Defaults.coreDefaultSettings ++ Sonatype.sonatypeSetti
 
   crossPaths := true,
   autoScalaLibrary := false,
-  crossScalaVersions := Seq("2.13.14", "2.13.14"),
+  crossScalaVersions := Seq("2.12.20", "2.13.14"),
 
   libraryDependencies ++= Seq(
     "org.scala-lang" % "scala-reflect" % scalaVersion.value,
