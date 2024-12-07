@@ -26,5 +26,5 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.0")
 
 libraryDependencies ++= Seq(
   "com.spotify.checkstyle" % "spotify-checkstyle-config" % "1.0.10",
-  "com.puppycrawl.tools" % "checkstyle" % "10.18.2"
+  "com.puppycrawl.tools" % "checkstyle" % "10.20.2"
 )
